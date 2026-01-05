@@ -19,7 +19,7 @@ namespace PdfChopper.ViewModels
     public partial class MainWindowViewModel : ObservableObject
     {
         #region Merge
-        public ObservableCollection<PdfFile> FilesToMerge { get; } = new ObservableCollection<PdfFile>();
+        public ObservableCollection<PdfFile> FilesToMerge { get; } = [];
 
         [ObservableProperty]
         private PdfFile? _selectedPdfFile;

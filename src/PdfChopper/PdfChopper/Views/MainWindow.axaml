@@ -16,7 +16,7 @@
     <TabControl>
         <TabItem Header="Merge">
             <Grid>
-                <DataGrid Margin="10,10,95,42"
+                <DataGrid Margin="10,10,95,42" AutoGenerateColumns="True"
                           ItemsSource="{Binding FilesToMerge}" SelectedItem="{Binding SelectedPdfFile, Mode=TwoWay}"
                           BorderThickness="1" BorderBrush="DarkGray" SelectionMode="Single"/>
                 <Button Command="{Binding Merge}" Content="Merge" HorizontalAlignment="Left" Margin="10" VerticalAlignment="Bottom" Width="80"/>
@@ -72,7 +72,7 @@
                     </Grid>
                 </Border>
                 <Label Content="Extracts:" Grid.Row="1" Margin="10,0,0,0"></Label>
-                <DataGrid Margin="10,0,5,10" Grid.Row="2"
+                <DataGrid Margin="10,0,5,10" Grid.Row="2" AutoGenerateColumns="True"
                           ItemsSource="{Binding FileExtracts}" SelectedItem="{Binding SelectedExtract, Mode=TwoWay}"
                           BorderThickness="1" BorderBrush="DarkGray" SelectionMode="Single"/>
                 <StackPanel Grid.Row="2" Grid.Column="1">
@@ -100,7 +100,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Files to interleave:" Grid.Row="0" Margin="10,0,0,0"></Label>
-                <DataGrid Margin="10,0,5,10" Grid.Row="1"
+                <DataGrid Margin="10,0,5,10" Grid.Row="1" AutoGenerateColumns="True"
                           ItemsSource="{Binding InterleaveFiles}" SelectedItem="{Binding SelectedInterleaveFile, Mode=TwoWay}"
                           BorderThickness="1" BorderBrush="DarkGray" SelectionMode="Single"/>
                 <StackPanel Grid.Row="1" Grid.Column="1">

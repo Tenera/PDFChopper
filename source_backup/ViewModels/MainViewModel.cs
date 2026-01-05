@@ -3,41 +3,55 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using PdfChopper.Models;
+using System.Windows;
+using Caliburn.Micro;
+using MergeSplitPdf.Model;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
 
-
-namespace PdfChopper.ViewModels
+namespace MergeSplitPdf.ViewModels
 {
-    public partial class MainWindowViewModel : ObservableObject
+    public class MainViewModel : Screen
     {
         #region Merge
         public ObservableCollection<PdfFile> FilesToMerge { get; } = new ObservableCollection<PdfFile>();
 
-        [ObservableProperty]
-        private PdfFile? _selectedPdfFile;
+        private PdfFile _selectedPdfFile;
 
-
-
-        public async Task Add()
+        public PdfFile SelectedPdfFile
         {
-            var dialog = new OpenFileDialog
+            get => _selectedPdfFile;
+            set
             {
-                AllowMultiple = true,
-                Filters = new List<FileDialogFilter> { new FileDialogFilter { Name = "PDF Files", Extensions = new List<string> { "pdf" } } },
+                if (Equals(value, _selectedPdfFile)) return;
+                _selectedPdfFile = value;
+                NotifyOfPropertyChange();
+                NotifyOfPropertyChange(() => CanDown);
+                NotifyOfPropertyChange(() => CanUp);
+            }
+        }
+
+        public void DropMergeFile(DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+
+            // Note that you can have more than one file.
+            AddFiles((string[])e.Data.GetData(DataFormats.FileDrop));
+        }
+
+        public void Add()
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                CheckFileExists = true,
+                Multiselect = true,
+                DefaultExt = ".pdf",
+                Filter = "PDF Files (*.pdf)|*.pdf",
                 Title = "Select files to merge"
             };
-            var result = await dialog.ShowAsync(MainWindow);
-            if (result != null)
+            if (dialog.ShowDialog() == true)
             {
-                AddFiles(result);
+                AddFiles(dialog.FileNames);
             }
         }
 
@@ -55,25 +69,24 @@ namespace PdfChopper.ViewModels
                     FilesToMerge.Add(new PdfFile(file));
                 }
             }
-            OnPropertyChanged(nameof(CanMerge));
+            NotifyOfPropertyChange(() => CanMerge);
         }
 
-        public async Task Merge()
+        public void Merge()
         {
-            var dialog = new SaveFileDialog
+            var dialog = new Microsoft.Win32.SaveFileDialog
             {
-                DefaultExtension = ".pdf",
-                Filters = new List<FileDialogFilter> { new FileDialogFilter { Name = "PDF Files", Extensions = new List<string> { "pdf" } } },
+                DefaultExt = ".pdf",
+                Filter = "PDF Files (*.pdf)|*.pdf",
                 Title = "Save merged file to"
             };
-            var result = await dialog.ShowAsync(MainWindow);
-            if (result != null)
+            if (dialog.ShowDialog() == true)
             {
-                CreateMergedFile(result);
+                CreateMergedFile(dialog.FileName);
             }
         }
 
-        private async Task CreateMergedFile(string dialogFileName)
+        private void CreateMergedFile(string dialogFileName)
         {
             try
             {
@@ -92,33 +105,30 @@ namespace PdfChopper.ViewModels
                     }
                     outputDocument.Save(dialogFileName);
                     outputDocument.Close();
-                    Console.WriteLine("Files merged successfully");
+                    MessageBox.Show("Files merged successfully", "Merge successful", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                MessageBox.Show(ex.Message, "Error occurred", MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
         }
 
         public bool CanMerge => FilesToMerge != null && FilesToMerge.Count > 1;
 
-        [RelayCommand(CanExecute = nameof(CanUp))]
         public void Up()
         {
             var selectedFile = SelectedPdfFile;
             var index = FilesToMerge.IndexOf(selectedFile);
             FilesToMerge.RemoveAt(index);
-            FilesToMerge.Insert(index - 1, selectedFile);
+            FilesToMerge.Insert(index-1, selectedFile);
             SelectedPdfFile = selectedFile;
         }
 
-        public bool CanUp => SelectedPdfFile != null
-                              && FilesToMerge != null
-                              && FilesToMerge.Any()
-                              && FilesToMerge.IndexOf(SelectedPdfFile) > 0;
-
-        [RelayCommand(CanExecute = nameof(CanDown))]
+        public bool CanUp => SelectedPdfFile != null 
+                             && FilesToMerge != null 
+                             && FilesToMerge.Any() 
+                             && FilesToMerge.IndexOf(SelectedPdfFile) > 0;
         public void Down()
         {
             var selectedFile = SelectedPdfFile;
@@ -129,9 +139,9 @@ namespace PdfChopper.ViewModels
         }
 
         public bool CanDown => SelectedPdfFile != null
-                              && FilesToMerge != null
-                              && FilesToMerge.Any()
-                              && FilesToMerge.IndexOf(SelectedPdfFile) < FilesToMerge.Count - 1;
+                             && FilesToMerge != null
+                             && FilesToMerge.Any()
+                             && FilesToMerge.IndexOf(SelectedPdfFile) < FilesToMerge.Count - 1;
 
         #endregion
 
@@ -139,26 +149,47 @@ namespace PdfChopper.ViewModels
 
         public ObservableCollection<PdfFileExtract> FileExtracts { get; } = new ObservableCollection<PdfFileExtract>();
 
-        [ObservableProperty]
-        private PdfFile? _fileToSplit;
+        private PdfFile _fileToSplit;
 
-
-
-
-
-        public async Task SelectSplitFile()
+        public PdfFile FileToSplit
         {
-            var dialog = new OpenFileDialog
+            get => _fileToSplit;
+            set
             {
-                AllowMultiple = false,
-                Filters = new List<FileDialogFilter> { new FileDialogFilter { Name = "PDF Files", Extensions = new List<string> { "pdf" } } },
+                if (Equals(value, _fileToSplit)) return;
+                _fileToSplit = value;
+                FileExtracts.Clear();
+                NotifyOfPropertyChange();
+                NotifyOfPropertyChange(nameof(CanAddExtract));
+                NotifyOfPropertyChange(nameof(CanSplit));
+            }
+        }
+
+        public void SelectSplitFile()
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                CheckFileExists = true,
+                Multiselect = false,
+                DefaultExt = ".pdf",
+                Filter = "PDF Files (*.pdf)|*.pdf",
                 Title = "Select file to split"
             };
-            var result = await dialog.ShowAsync(MainWindow);
-            if (result != null && result.Length > 0)
+            if (dialog.ShowDialog() == true)
             {
-                SetSplitFile(result[0]);
+                SetSplitFile(dialog.FileName);               
             }
+        }
+
+        public void DropSplitFile(DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+
+            var files = (string[]) e.Data.GetData(DataFormats.FileDrop);
+            if (files == null || files.Length == 0) return;
+            if (FileToSplit?.FilePath == files[0]) return;
+
+            SetSplitFile(files[0]);
         }
 
         private void SetSplitFile(string filepath)
@@ -169,11 +200,11 @@ namespace PdfChopper.ViewModels
             }
             catch (Exception)
             {
-                Console.WriteLine("Invalid file specified. Please select a valid PDF-file");
+                MessageBox.Show("Invalid file specified. Please select a valid PDF-file", "Invalid file", MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
         }
 
-        public async Task Split()
+        public void Split()
         {
             try
             {
@@ -195,71 +226,77 @@ namespace PdfChopper.ViewModels
                     }
                     inputDocument.Close();
                 }
-                Console.WriteLine("File split successfully");
+                MessageBox.Show("File split successfully", "Split successful", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                MessageBox.Show(ex.Message, "Error occurred", MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
         }
 
         public bool CanSplit => FileToSplit != null && FileExtracts.Any();
 
-        public async Task AddExtract()
+        public void AddExtract()
         {
-            var dialog = new SaveFileDialog
+            var dialog = new Microsoft.Win32.SaveFileDialog
             {
-                DefaultExtension = ".pdf",
-                Filters = new List<FileDialogFilter> { new FileDialogFilter { Name = "PDF Files", Extensions = new List<string> { "pdf" } } },
+                DefaultExt = ".pdf",
+                Filter = "PDF Files (*.pdf)|*.pdf",
                 Title = "Save extract to"
             };
-            var result = await dialog.ShowAsync(MainWindow);
-            if (result != null)
+            if (dialog.ShowDialog() == true)
             {
-                FileExtracts.Add(new PdfFileExtract(FileToSplit!, result));
-                OnPropertyChanged(nameof(CanSplit));
+                FileExtracts.Add(new PdfFileExtract(FileToSplit, dialog.FileName));
+                NotifyOfPropertyChange(nameof(CanSplit));
             }
         }
 
         public bool CanAddExtract => FileToSplit != null;
 
-        [RelayCommand(CanExecute = nameof(CanDeleteExtract))]
         public void DeleteExtract()
         {
             if (SelectedExtract == null) return;
 
             FileExtracts.Remove(SelectedExtract);
 
-            OnPropertyChanged(nameof(CanSplit));
+            NotifyOfPropertyChange(nameof(CanSplit));
         }
 
         public bool CanDeleteExtract => SelectedExtract != null;
 
-        [ObservableProperty]
-        private PdfFileExtract? _selectedExtract;
+        private PdfFileExtract _selectedExtract;
 
+        public PdfFileExtract SelectedExtract
+        {
+            get => _selectedExtract;
+            set
+            {
+                if (Equals(value, _selectedExtract)) return;
+                _selectedExtract = value;
+                NotifyOfPropertyChange();
+                NotifyOfPropertyChange(nameof(CanDeleteExtract));
+            }
+        }
         #endregion
 
         #region Interleave
 
         public ObservableCollection<PdfFile> InterleaveFiles { get; } = new ObservableCollection<PdfFile>();
 
-        public async Task Interleave()
+        public void Interleave()
         {
-            var dialog = new SaveFileDialog
+            var dialog = new Microsoft.Win32.SaveFileDialog
             {
-                DefaultExtension = ".pdf",
-                Filters = new List<FileDialogFilter> { new FileDialogFilter { Name = "PDF Files", Extensions = new List<string> { "pdf" } } },
+                DefaultExt = ".pdf",
+                Filter = "PDF Files (*.pdf)|*.pdf",
                 Title = "Save interleaved file to"
             };
-            var result = await dialog.ShowAsync(MainWindow);
-            if (result != null)
+            if (dialog.ShowDialog() == true)
             {
-                await CreateInterleavedFile(result);
+                CreateInterleavedFile(dialog.FileName);
             }
         }
-
-        public async Task CreateInterleavedFile(string filePath)
+        public void CreateInterleavedFile(string filePath)
         {
             try
             {
@@ -298,78 +335,102 @@ namespace PdfChopper.ViewModels
                     outputDocument.Save(filePath);
                     outputDocument.Close();
                 }
-
-                Console.WriteLine("Files interleaved successfully");
+                
+                MessageBox.Show("Files interleaved successfully", "Interleave successful", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                MessageBox.Show(ex.Message, "Error occurred", MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
         }
 
         public bool CanInterleave => InterleaveFiles?.Count > 1;
 
-        public async Task AddInterleaveFile()
+        public void AddInterleaveFile()
         {
-            var dialog = new OpenFileDialog
+            var dialog = new Microsoft.Win32.OpenFileDialog
             {
-                AllowMultiple = false,
-                Filters = new List<FileDialogFilter> { new FileDialogFilter { Name = "PDF Files", Extensions = new List<string> { "pdf" } } },
+                DefaultExt = ".pdf",
+                Filter = "PDF Files (*.pdf)|*.pdf",
                 Title = "Add file to interleave"
             };
-            var result = await dialog.ShowAsync(MainWindow);
-            if (result != null && result.Length > 0)
+            if (dialog.ShowDialog() == true)
             {
-                InterleaveFiles.Add(new PdfFile(result[0]));
-                OnPropertyChanged(nameof(CanInterleave));
+                InterleaveFiles.Add(new PdfFile(dialog.FileName));
+                NotifyOfPropertyChange(nameof(CanInterleave));
             }
         }
 
         public bool CanAddInterleaveFile => true;
 
-        [RelayCommand(CanExecute = nameof(CanDeleteInterleaveFile))]
         public void DeleteInterleaveFile()
         {
             if (SelectedInterleaveFile == null) return;
 
             InterleaveFiles.Remove(SelectedInterleaveFile);
 
-            OnPropertyChanged(nameof(CanInterleave));
+            NotifyOfPropertyChange(nameof(CanInterleave));
         }
 
         public bool CanDeleteInterleaveFile => SelectedInterleaveFile != null;
 
-        [ObservableProperty]
-        private PdfFile? _selectedInterleaveFile;
+        private PdfFile _selectedInterleaveFile;
 
+        public PdfFile SelectedInterleaveFile
+        {
+            get => _selectedInterleaveFile;
+            set
+            {
+                if (Equals(value, _selectedInterleaveFile)) return;
+                _selectedInterleaveFile = value;
+                NotifyOfPropertyChange();
+                NotifyOfPropertyChange(nameof(CanDeleteInterleaveFile));
+            }
+        }
         #endregion
 
         #region Reorder
 
-        [ObservableProperty]
-        private PdfFile? _fileToReorder;
+        private PdfFile _fileToReorder;
 
-        partial void OnFileToReorderChanged(PdfFile? value)
+        public PdfFile FileToReorder
         {
-            OnPropertyChanged(nameof(CanReorder));
-        }
-
-        public async Task SelectReorderFile()
-        {
-            var dialog = new OpenFileDialog
+            get => _fileToReorder;
+            set
             {
-                AllowMultiple = false,
-                Filters = new List<FileDialogFilter> { new FileDialogFilter { Name = "PDF Files", Extensions = new List<string> { "pdf" } } },
-                Title = "Select file to reorder"
-            };
-            var result = await dialog.ShowAsync(MainWindow);
-            if (result != null && result.Length > 0)
-            {
-                SetReorderFile(result[0]);
+                if (Equals(value, _fileToReorder)) return;
+                _fileToReorder = value;
+                NotifyOfPropertyChange();
+                NotifyOfPropertyChange(nameof(CanReorder));
             }
         }
 
+        public void SelectReorderFile()
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                CheckFileExists = true,
+                Multiselect = false,
+                DefaultExt = ".pdf",
+                Filter = "PDF Files (*.pdf)|*.pdf",
+                Title = "Select file to reorder"
+            };
+            if (dialog.ShowDialog() == true)
+            {
+                SetReorderFile(dialog.FileName);
+            }
+        }
 
+        public void DropReorderFile(DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+
+            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (files == null || files.Length == 0) return;
+            if (FileToReorder?.FilePath == files[0]) return;
+
+            SetReorderFile(files[0]);
+        }
 
         private void SetReorderFile(string filepath)
         {
@@ -379,11 +440,11 @@ namespace PdfChopper.ViewModels
             }
             catch (Exception)
             {
-                Console.WriteLine("Invalid file specified. Please select a valid PDF-file");
+                MessageBox.Show("Invalid file specified. Please select a valid PDF-file", "Invalid file", MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
         }
 
-        public async Task Reorder()
+        public void Reorder()
         {
             try
             {
@@ -406,20 +467,17 @@ namespace PdfChopper.ViewModels
                     outputDocument.Save(outputPath);
                     outputDocument.Close();
                 }
-
-                Console.WriteLine($"File reordered successfully to {outputPath}");
+                
+                MessageBox.Show($"File reordered successfully to {outputPath}", "Reordered successful", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                MessageBox.Show(ex.Message, "Error occurred", MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
         }
 
         public bool CanReorder => FileToReorder != null;
 
         #endregion
-
-        // Helper properties and methods
-        private Window? MainWindow => Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
     }
 }

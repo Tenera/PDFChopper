@@ -18,6 +18,7 @@ namespace PdfChopper.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
 {
+    private static readonly List<FileDialogFilter> PdfFileDialogFilters = [new() { Name = "PDF Files", Extensions = ["pdf"] }];
     #region Merge
     public ObservableCollection<PdfFile> FilesToMerge { get; } = [];
 
@@ -30,7 +31,7 @@ public partial class MainWindowViewModel : ObservableObject
         var dialog = new OpenFileDialog
         {
             AllowMultiple = true,
-            Filters = [new FileDialogFilter { Name = "PDF Files", Extensions = ["pdf"] }],
+            Filters = PdfFileDialogFilters,
             Title = "Select files to merge"
         };
         var result = await dialog.ShowAsync(MainWindow);
@@ -56,7 +57,6 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         OnPropertyChanged(nameof(CanMerge));
-        OnPropertyChanged(nameof(FilesToMerge));
     }
 
     [RelayCommand(CanExecute = nameof(CanMerge))]
@@ -65,8 +65,10 @@ public partial class MainWindowViewModel : ObservableObject
         var dialog = new SaveFileDialog
         {
             DefaultExtension = ".pdf",
-            Filters = [new FileDialogFilter { Name = "PDF Files", Extensions = ["pdf"] }],
-            Title = "Save merged file to"
+            Filters = PdfFileDialogFilters,
+            Title = "Save merged file to",
+            ShowOverwritePrompt = true,
+            InitialFileName = "Merged.pdf"
         };
         var result = await dialog.ShowAsync(MainWindow);
         if (result != null)
@@ -135,17 +137,18 @@ public partial class MainWindowViewModel : ObservableObject
 
     #region Split
 
-    public ObservableCollection<PdfFileExtract> FileExtracts { get; } = new ObservableCollection<PdfFileExtract>();
+    public ObservableCollection<PdfFileExtract> FileExtracts { get; } = [];
 
     [ObservableProperty]
     private PdfFile? _fileToSplit;
 
+    [RelayCommand]
     public async Task SelectSplitFile()
     {
         var dialog = new OpenFileDialog
         {
             AllowMultiple = false,
-            Filters = [new FileDialogFilter { Name = "PDF Files", Extensions = ["pdf"] }],
+            Filters = PdfFileDialogFilters,
             Title = "Select file to split"
         };
         var result = await dialog.ShowAsync(MainWindow);
@@ -167,26 +170,25 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    [RelayCommand(CanExecute = nameof(CanSplit))]
     public async Task Split()
     {
         try
         {
             if (FileToSplit == null || !FileExtracts.Any()) return;
 
-            using (var inputDocument = PdfReader.Open(FileToSplit.FilePath, PdfDocumentOpenMode.Import))
+            using var inputDocument = PdfReader.Open(FileToSplit.FilePath, PdfDocumentOpenMode.Import);
+            foreach (var extract in FileExtracts)
             {
-                foreach (var extract in FileExtracts)
+                using var outputDocument = new PdfDocument();
+                for (var j = extract.StartPage; j <= extract.EndPage; j++)
                 {
-                    using var outputDocument = new PdfDocument();
-                    for (var j = extract.StartPage; j <= extract.EndPage; j++)
-                    {
-                        outputDocument.AddPage(inputDocument.Pages[j - 1]);
-                    }
-                    await outputDocument.SaveAsync(extract.FilePath);
-                    outputDocument.Close();
+                    outputDocument.AddPage(inputDocument.Pages[j - 1]);
                 }
-                inputDocument.Close();
+                await outputDocument.SaveAsync(extract.FilePath);
+                outputDocument.Close();
             }
+            inputDocument.Close();
             Console.WriteLine("File split successfully");
         }
         catch (Exception ex)
@@ -197,13 +199,16 @@ public partial class MainWindowViewModel : ObservableObject
 
     public bool CanSplit => FileToSplit != null && FileExtracts.Any();
 
+    [RelayCommand(CanExecute = nameof(CanAddExtract))]
     public async Task AddExtract()
     {
         var dialog = new SaveFileDialog
         {
             DefaultExtension = ".pdf",
-            Filters = [new FileDialogFilter { Name = "PDF Files", Extensions = ["pdf"] }],
-            Title = "Save extract to"
+            Filters = PdfFileDialogFilters,
+            Title = "Save extract to",
+            ShowOverwritePrompt = true,
+            InitialFileName = "Extract.pdf"
         };
         var result = await dialog.ShowAsync(MainWindow);
         if (result != null)
@@ -236,13 +241,16 @@ public partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<PdfFile> InterleaveFiles { get; } = new ObservableCollection<PdfFile>();
 
+    [RelayCommand(CanExecute = nameof(CanInterleave))]
     public async Task Interleave()
     {
         var dialog = new SaveFileDialog
         {
             DefaultExtension = ".pdf",
-            Filters = [new FileDialogFilter { Name = "PDF Files", Extensions = ["pdf"] }],
-            Title = "Save interleaved file to"
+            Filters = PdfFileDialogFilters,
+            Title = "Save interleaved file to",
+            ShowOverwritePrompt = true,
+            InitialFileName = "Interleaved.pdf"
         };
         var result = await dialog.ShowAsync(MainWindow);
         if (result != null)
@@ -251,8 +259,9 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    public async Task CreateInterleavedFile(string filePath)
+    private async Task CreateInterleavedFile(string filePath)
     {
+        var openDocs = new List<PdfDocument>(InterleaveFiles.Count);
         try
         {
             if (InterleaveFiles.Count <= 1) return;
@@ -261,7 +270,8 @@ public partial class MainWindowViewModel : ObservableObject
             foreach (var interleaveFile in InterleaveFiles)
             {
                 var q = new Queue<PdfPage>();
-                using var inputDocument = PdfReader.Open(interleaveFile.FilePath, PdfDocumentOpenMode.Import);
+                var inputDocument = PdfReader.Open(interleaveFile.FilePath, PdfDocumentOpenMode.Import);
+                openDocs.Add(inputDocument);
                 for (var j = interleaveFile.StartPage; j <= interleaveFile.EndPage; j++)
                 {
                     q.Enqueue(inputDocument.Pages[j - 1]);
@@ -294,16 +304,25 @@ public partial class MainWindowViewModel : ObservableObject
         {
             Console.WriteLine(ex.Message);
         }
+        finally
+        {
+            foreach (var pdfDocument in openDocs)
+            {
+                pdfDocument.Close();
+                pdfDocument.Dispose();
+            }
+        }
     }
 
     public bool CanInterleave => InterleaveFiles?.Count > 1;
 
+    [RelayCommand(CanExecute = nameof(CanAddInterleaveFile))]
     public async Task AddInterleaveFile()
     {
         var dialog = new OpenFileDialog
         {
             AllowMultiple = false,
-            Filters = [new FileDialogFilter { Name = "PDF Files", Extensions = ["pdf"] }],
+            Filters = PdfFileDialogFilters,
             Title = "Add file to interleave"
         };
         var result = await dialog.ShowAsync(MainWindow);
@@ -343,12 +362,13 @@ public partial class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(CanReorder));
     }
 
+    [RelayCommand]
     public async Task SelectReorderFile()
     {
         var dialog = new OpenFileDialog
         {
             AllowMultiple = false,
-            Filters = [new FileDialogFilter { Name = "PDF Files", Extensions = ["pdf"] }],
+            Filters = PdfFileDialogFilters,
             Title = "Select file to reorder"
         };
         var result = await dialog.ShowAsync(MainWindow);
@@ -370,6 +390,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    [RelayCommand(CanExecute = nameof(CanReorder))]   
     public async Task Reorder()
     {
         try
@@ -391,6 +412,7 @@ public partial class MainWindowViewModel : ObservableObject
             }
             await outputDocument.SaveAsync(outputPath);
             outputDocument.Close();
+            inputDocument.Close();
 
             Console.WriteLine($"File reordered successfully to {outputPath}");
         }

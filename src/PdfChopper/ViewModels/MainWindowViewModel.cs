@@ -21,7 +21,7 @@ public partial class MainWindowViewModel : ObservableObject
     private static readonly List<FileDialogFilter> PdfFileDialogFilters = [new() { Name = "PDF Files", Extensions = ["pdf"] }];
 
     // Helper properties and methods
-    private Window? MainWindow => Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+    private static Window? MainWindow => Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
 
     #region Merge
     public ObservableCollection<PdfFile> FilesToMerge { get; } = [];
@@ -104,11 +104,13 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    public bool CanMerge => FilesToMerge != null && FilesToMerge.Count > 1;
+    public bool CanMerge => FilesToMerge is { Count: > 1 };
 
     [RelayCommand(CanExecute = nameof(CanUp))]
     public void Up()
     {
+        if (SelectedPdfFile is null) return;
+
         var selectedFile = SelectedPdfFile;
         var index = FilesToMerge.IndexOf(selectedFile);
         FilesToMerge.RemoveAt(index);
@@ -116,14 +118,15 @@ public partial class MainWindowViewModel : ObservableObject
         SelectedPdfFile = selectedFile;
     }
 
-    public bool CanUp => SelectedPdfFile != null
-                         && FilesToMerge != null
+    public bool CanUp => SelectedPdfFile is not null
                          && FilesToMerge.Any()
                          && FilesToMerge.IndexOf(SelectedPdfFile) > 0;
 
     [RelayCommand(CanExecute = nameof(CanDown))]
     public void Down()
     {
+        if (SelectedPdfFile is null) return;
+
         var selectedFile = SelectedPdfFile;
         var index = FilesToMerge.IndexOf(selectedFile);
         FilesToMerge.RemoveAt(index);
@@ -132,7 +135,6 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     public bool CanDown => SelectedPdfFile != null
-                           && FilesToMerge != null
                            && FilesToMerge.Any()
                            && FilesToMerge.IndexOf(SelectedPdfFile) < FilesToMerge.Count - 1;
 
@@ -155,7 +157,7 @@ public partial class MainWindowViewModel : ObservableObject
             Title = "Select file to split"
         };
         var result = await dialog.ShowAsync(MainWindow);
-        if (result != null && result.Length > 0)
+        if (result is { Length: > 0 })
         {
             SetSplitFile(result[0]);
         }
@@ -332,7 +334,7 @@ public partial class MainWindowViewModel : ObservableObject
             Title = "Add file to interleave"
         };
         var result = await dialog.ShowAsync(MainWindow);
-        if (result != null && result.Length > 0)
+        if (result is { Length: > 0 })
         {
             InterleaveFiles.Add(new PdfFile(result[0]));
             OnPropertyChanged(nameof(CanInterleave));
@@ -378,7 +380,7 @@ public partial class MainWindowViewModel : ObservableObject
             Title = "Select file to reorder"
         };
         var result = await dialog.ShowAsync(MainWindow);
-        if (result != null && result.Length > 0)
+        if (result is { Length: > 0 })
         {
             SetReorderFile(result[0]);
         }

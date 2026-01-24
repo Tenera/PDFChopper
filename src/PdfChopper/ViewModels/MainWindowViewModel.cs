@@ -19,6 +19,10 @@ namespace PdfChopper.ViewModels;
 public partial class MainWindowViewModel : ObservableObject
 {
     private static readonly List<FileDialogFilter> PdfFileDialogFilters = [new() { Name = "PDF Files", Extensions = ["pdf"] }];
+
+    // Helper properties and methods
+    private Window? MainWindow => Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+
     #region Merge
     public ObservableCollection<PdfFile> FilesToMerge { get; } = [];
 
@@ -49,8 +53,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             var fileInfo = new FileInfo(file);
             if (fileInfo.Exists
-                && fileInfo.Extension.ToLowerInvariant() == ".pdf"
-                && FilesToMerge.All(x => x.FilePath != file))
+                && string.Equals(fileInfo.Extension, ".pdf", StringComparison.OrdinalIgnoreCase))
             {
                 FilesToMerge.Add(new PdfFile(file));
             }
@@ -425,7 +428,4 @@ public partial class MainWindowViewModel : ObservableObject
     public bool CanReorder => FileToReorder != null;
 
     #endregion
-
-    // Helper properties and methods
-    private Window? MainWindow => Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
 }

@@ -3,11 +3,11 @@
         xmlns:vm="using:PdfChopper.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
         x:Class="PdfChopper.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/PDFChopper.ico"
-        Title="PdfChopper">
+        Title="PDF Chopper">
 
     <Window.Styles>
         <Style Selector="Button" >
@@ -141,10 +141,14 @@
         </TabItem>
 
         <TabItem Header="About">
-            <Grid ColumnDefinitions="Auto,*">
-                <TextBlock Grid.Column="1" Margin="20">
-                    Developed using PDFsharp and Avalonia.
-                </TextBlock>
+            <Grid RowDefinitions="Auto,*">
+                <Image Source="/Assets/Logo.png" Width="225" Height="101" Margin="0 40 0 20"/>
+                <StackPanel Grid.Row="1" HorizontalAlignment="Center">
+                    <Label>Developed by Tenera IT using:</Label>
+                    <Label>● Avalonia</Label>
+                    <Label>● PdfSharp</Label>
+                    <Label Margin="0 10">Released "as is" and free to use.</Label>
+                </StackPanel>
             </Grid>
         </TabItem>
     </TabControl>

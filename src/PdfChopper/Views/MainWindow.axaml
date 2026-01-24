@@ -82,18 +82,25 @@
         </TabItem>
 
         <TabItem Header="Interleave">
-            <Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="*,Auto" Margin="0 4 0 8">
-                <Label Content="Files to interleave:" Grid.Row="0" Margin="4 0"></Label>
-                <DataGrid Margin="4" Grid.Row="1" AutoGenerateColumns="True"
+            <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="*,Auto" Margin="0 4 0 8">
+                <StackPanel Grid.Row="0" Orientation="Vertical" Margin="4">
+                    <Label>Interleave the pages of multiple PDF documents:</Label>
+                    <Label>● Pages of all documents will be merged into 1 document</Label>
+                    <Label>● First round: Take first page of all documents</Label>
+                    <Label>● Second round: Take second page of all documents (if it has one)</Label>
+                    <Label>● ...</Label>
+                </StackPanel>
+                <Label Grid.Row="1" Content="Files to interleave:" Margin="4 0"></Label>
+                <DataGrid Margin="4" Grid.Row="2" AutoGenerateColumns="True"
                           ItemsSource="{Binding InterleaveFiles}" SelectedItem="{Binding SelectedInterleaveFile, Mode=TwoWay}"
                           BorderThickness="1" BorderBrush="DarkGray" SelectionMode="Single"/>
-                <StackPanel Grid.Row="1" Grid.Column="1">
+                <StackPanel Grid.Row="2" Grid.Column="1">
                     <Button Command="{Binding AddInterleaveFile}" Content="Add" Margin="4,0,4,4" VerticalAlignment="Top"/>
                     <Button Command="{Binding DeleteInterleaveFile}" Content="Delete" VerticalAlignment="Top"/>
                 </StackPanel>
 
                 <Button Command="{Binding Interleave}" Content="Interleave" VerticalAlignment="Top"
-                        Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" />
+                        Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left" />
             </Grid>
         </TabItem>
 
@@ -101,8 +108,9 @@
             <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" Margin="0 4 0 8">
                 <StackPanel Grid.Row="0" Orientation="Vertical" Margin="4">
                     <Label>Reorder the pages of a recto-verso PDF document after scanning:</Label>
-                    <Label>● First part: Odd pages (1, 3, 5, ...)</Label>
-                    <Label>● Second part: Even pages by scanning the document upside down (10, 8, 6, ...)</Label>
+                    <Label>● First part: Scan document with auto feeder => Odd pages (1, 3, 5, ...)</Label>
+                    <Label>● Second part: Scan document as it comes out after the first scan => even pages in reverse order (10, 8, 6, ...)</Label>
+                    <Label>Clicking the Reorder button will reorder the pages correctly if you followed the previous steps.</Label>
                 </StackPanel>
 
                 <Border Grid.Row="1" BorderThickness="1" 

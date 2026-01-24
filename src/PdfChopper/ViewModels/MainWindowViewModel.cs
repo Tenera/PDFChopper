@@ -269,6 +269,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             if (InterleaveFiles.Count <= 1) return;
 
+            // Read all files and enqueue their pages
             var pageQueues = new List<Queue<PdfPage>>();
             foreach (var interleaveFile in InterleaveFiles)
             {
@@ -283,6 +284,7 @@ public partial class MainWindowViewModel : ObservableObject
                 pageQueues.Add(q);
             }
 
+            // Dequeue pages in round-robin fashion and add to output document
             using var outputDocument = new PdfDocument();
             var pagesAdded = true;
             while (pagesAdded)
@@ -309,6 +311,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
         finally
         {
+            // Close and dispose all opened documents
             foreach (var pdfDocument in openDocs)
             {
                 pdfDocument.Close();

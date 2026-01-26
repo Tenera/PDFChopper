@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using PdfChopper.Services;
 
 
 namespace PdfChopper.ViewModels;
@@ -96,11 +97,11 @@ public partial class MainWindowViewModel : ObservableObject
             }
             await outputDocument.SaveAsync(fileName);
             outputDocument.Close();
-            Console.WriteLine("Files merged successfully");
+            await DialogService.ShowMessage("Merge successful", "Files merged successfully");
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            await DialogService.ShowMessage("Error occurred", ex.Message);
         }
     }
 
@@ -185,11 +186,11 @@ public partial class MainWindowViewModel : ObservableObject
         var result = await dialog.ShowAsync(MainWindow);
         if (result is { Length: > 0 })
         {
-            SetSplitFile(result[0]);
+            await SetSplitFile(result[0]);
         }
     }
 
-    private void SetSplitFile(string filepath)
+    private async Task SetSplitFile(string filepath)
     {
         try
         {
@@ -197,7 +198,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
         catch (Exception)
         {
-            Console.WriteLine("Invalid file specified. Please select a valid PDF-file");
+            await DialogService.ShowMessage( "Invalid file", "Invalid file specified. Please select a valid PDF-file");
         }
     }
 
@@ -220,11 +221,11 @@ public partial class MainWindowViewModel : ObservableObject
                 outputDocument.Close();
             }
             inputDocument.Close();
-            Console.WriteLine("File split successfully");
+            await DialogService.ShowMessage("Split successful", "File split successfully");
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            await DialogService.ShowMessage("Error occurred", ex.Message);
         }
     }
 
@@ -246,7 +247,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (FileExtracts.Any(x => x.FilePath.Equals(result, StringComparison.OrdinalIgnoreCase)))
         {
-            Console.WriteLine("A file with the same path is already in the list of extracts.");
+            await DialogService.ShowMessage("Duplicate extract", "A file with the same path is already in the list of extracts.");
             return;
         }
 
@@ -347,11 +348,11 @@ public partial class MainWindowViewModel : ObservableObject
             await outputDocument.SaveAsync(filePath);
             outputDocument.Close();
 
-            Console.WriteLine("Files interleaved successfully");
+            await DialogService.ShowMessage("Interleave successful", "Files interleaved successfully");
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            await DialogService.ShowMessage("Error occurred", ex.Message);
         }
         finally
         {
@@ -435,11 +436,11 @@ public partial class MainWindowViewModel : ObservableObject
         var result = await dialog.ShowAsync(MainWindow);
         if (result is { Length: > 0 })
         {
-            SetReorderFile(result[0]);
+            await SetReorderFile(result[0]);
         }
     }
 
-    private void SetReorderFile(string filepath)
+    private async Task SetReorderFile(string filepath)
     {
         try
         {
@@ -447,7 +448,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
         catch (Exception)
         {
-            Console.WriteLine("Invalid file specified. Please select a valid PDF-file");
+            await DialogService.ShowMessage("Invalid file", "Invalid file specified. Please select a valid PDF-file");
         }
     }
 
@@ -475,11 +476,11 @@ public partial class MainWindowViewModel : ObservableObject
             outputDocument.Close();
             inputDocument.Close();
 
-            Console.WriteLine($"File reordered successfully to {outputPath}");
+            await DialogService.ShowMessage("Reordered successful", $"File reordered successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            await DialogService.ShowMessage("Error occurred", ex.Message);
         }
     }
 

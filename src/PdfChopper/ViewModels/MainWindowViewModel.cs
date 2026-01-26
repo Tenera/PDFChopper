@@ -138,6 +138,29 @@ public partial class MainWindowViewModel : ObservableObject
                            && FilesToMerge.Any()
                            && FilesToMerge.IndexOf(SelectedPdfFile) < FilesToMerge.Count - 1;
 
+    [RelayCommand(CanExecute = nameof(CanDelete))]
+    public void Delete()
+    {
+        if (SelectedPdfFile == null) return;
+
+        FilesToMerge.Remove(SelectedPdfFile);
+
+        OnPropertyChanged(nameof(CanClear));
+        OnPropertyChanged(nameof(CanMerge));
+    }
+
+    public bool CanDelete => SelectedPdfFile is not null;
+
+    [RelayCommand(CanExecute = nameof(CanClear))]
+    public void Clear()
+    {
+        FilesToMerge.Clear();
+        OnPropertyChanged(nameof(CanMerge));
+        OnPropertyChanged(nameof(CanClear));
+    }
+
+    public bool CanClear => FilesToMerge.Any();
+
     #endregion
 
     #region Split
@@ -242,9 +265,20 @@ public partial class MainWindowViewModel : ObservableObject
         FileExtracts.Remove(SelectedExtract);
 
         OnPropertyChanged(nameof(CanSplit));
+        OnPropertyChanged(nameof(CanClearExtracts));
     }
 
     public bool CanDeleteExtract => SelectedExtract != null;
+
+    [RelayCommand(CanExecute = nameof(CanClearExtracts))]
+    public void ClearExtracts()
+    {
+        FileExtracts.Clear();
+        OnPropertyChanged(nameof(CanSplit));
+        OnPropertyChanged(nameof(CanClearExtracts));
+    }
+
+    public bool CanClearExtracts => FileExtracts.Any();
 
     #endregion
 
@@ -362,9 +396,20 @@ public partial class MainWindowViewModel : ObservableObject
         InterleaveFiles.Remove(SelectedInterleaveFile);
 
         OnPropertyChanged(nameof(CanInterleave));
+        OnPropertyChanged(nameof(CanClearInterleaveFiles));
     }
 
     public bool CanDeleteInterleaveFile => SelectedInterleaveFile != null;
+
+    [RelayCommand(CanExecute = nameof(CanClearInterleaveFiles))]
+    public void ClearInterleaveFiles()
+    {
+        InterleaveFiles.Clear();
+        OnPropertyChanged(nameof(CanInterleave));
+        OnPropertyChanged(nameof(CanClearInterleaveFiles));
+    }
+
+    public bool CanClearInterleaveFiles => FilesToMerge.Any();
 
     #endregion
 

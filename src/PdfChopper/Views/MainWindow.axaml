@@ -37,8 +37,11 @@
                           SelectionMode="Single" />
                 <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" Margin="4">
                     <Button Command="{Binding Add}" Content="Add" Margin="4 0 4 4" />
+                    <Button  Command="{Binding Delete}" Content="Delete" />
+                    <Button  Command="{Binding Clear}" Content="Delete all" />
                     <Button Command="{Binding Up}" Content="Up" />
                     <Button  Command="{Binding Down}" Content="Down" />
+                    
                 </StackPanel>
                 <Button Grid.Column="0" Grid.Row="1" Command="{Binding Merge}" Content="Merge"
                         HorizontalAlignment="Left" />
@@ -72,8 +75,9 @@
                           ItemsSource="{Binding FileExtracts}" SelectedItem="{Binding SelectedExtract, Mode=TwoWay}"
                           BorderThickness="1" BorderBrush="DarkGray" SelectionMode="Single"/>
                 <StackPanel Grid.Row="2" Grid.Column="1">
-                    <Button Command="{Binding AddExtract}" Content="Add"  VerticalAlignment="Top" Margin="4 0 4 4"/>
-                    <Button Command="{Binding DeleteExtract}" Content="Delete"  VerticalAlignment="Top"/>
+                    <Button Command="{Binding AddExtract}" Content="Add"  Margin="4 0 4 4"/>
+                    <Button Command="{Binding DeleteExtract}" Content="Delete" />
+                    <Button Command="{Binding ClearExtracts}" Content="Delete all" />
                 </StackPanel>
 
                 <Button Command="{Binding Split}" Content="Split"
@@ -97,6 +101,7 @@
                 <StackPanel Grid.Row="2" Grid.Column="1">
                     <Button Command="{Binding AddInterleaveFile}" Content="Add" Margin="4,0,4,4" VerticalAlignment="Top"/>
                     <Button Command="{Binding DeleteInterleaveFile}" Content="Delete" VerticalAlignment="Top"/>
+                    <Button Command="{Binding ClearInterleaveFiles}" Content="Delete all" VerticalAlignment="Top"/>
                 </StackPanel>
 
                 <Button Command="{Binding Interleave}" Content="Interleave" VerticalAlignment="Top"

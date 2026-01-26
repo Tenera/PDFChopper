@@ -36,14 +36,14 @@
                           SelectedItem="{Binding SelectedPdfFile, Mode=TwoWay}"
                           SelectionMode="Single" />
                 <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" Margin="4">
-                    <Button Command="{Binding Add}" Content="Add" Margin="4 0 4 4" />
-                    <Button  Command="{Binding Delete}" Content="Delete" />
-                    <Button  Command="{Binding Clear}" Content="Delete all" />
-                    <Button Command="{Binding Up}" Content="Up" />
-                    <Button  Command="{Binding Down}" Content="Down" />
+                    <Button Command="{Binding AddCommand}" Content="Add" Margin="4 0 4 4" />
+                    <Button  Command="{Binding DeleteCommand}" Content="Delete" />
+                    <Button  Command="{Binding ClearCommand}" Content="Delete all" />
+                    <Button Command="{Binding UpCommand}" Content="Up" />
+                    <Button  Command="{Binding DownCommand}" Content="Down" />
                     
                 </StackPanel>
-                <Button Grid.Column="0" Grid.Row="1" Command="{Binding Merge}" Content="Merge"
+                <Button Grid.Column="0" Grid.Row="1" Command="{Binding MergeCommand}" Content="Merge"
                         HorizontalAlignment="Left" />
             </Grid>
         </TabItem>
@@ -60,7 +60,7 @@
                             <Label Content="Path:" Margin="4"  VerticalAlignment="Center"/>
                             <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="4" Margin="4" IsReadOnly="True"
                                      Text="{Binding FileToSplit.FilePath, Mode=OneWay}" />
-                            <Button Command="{Binding SelectSplitFile}" Content="..." Grid.Column="5" Margin="4 0" Width="40"/>
+                            <Button Command="{Binding SelectSplitFileCommand}" Content="..." Grid.Column="5" Margin="4 0" Width="40"/>
                             <Label Grid.Row="1" Content="Filename:" Margin="4"  VerticalAlignment="Center"/>
                             <TextBox Grid.Row="1" Grid.Column="1" Margin="4" IsReadOnly="True"
                                      Text="{Binding FileToSplit.FileName, Mode=OneWay}"/>
@@ -75,12 +75,12 @@
                           ItemsSource="{Binding FileExtracts}" SelectedItem="{Binding SelectedExtract, Mode=TwoWay}"
                           BorderThickness="1" BorderBrush="DarkGray" SelectionMode="Single"/>
                 <StackPanel Grid.Row="2" Grid.Column="1">
-                    <Button Command="{Binding AddExtract}" Content="Add"  Margin="4 0 4 4"/>
-                    <Button Command="{Binding DeleteExtract}" Content="Delete" />
-                    <Button Command="{Binding ClearExtracts}" Content="Delete all" />
+                    <Button Command="{Binding AddExtractCommand}" Content="Add"  Margin="4 0 4 4"/>
+                    <Button Command="{Binding DeleteExtractCommand}" Content="Delete" />
+                    <Button Command="{Binding ClearExtractsCommand}" Content="Delete all" />
                 </StackPanel>
 
-                <Button Command="{Binding Split}" Content="Split"
+                <Button Command="{Binding SplitCommand}" Content="Split"
                         Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left"/>
             </Grid>
         </TabItem>
@@ -99,12 +99,12 @@
                           ItemsSource="{Binding InterleaveFiles}" SelectedItem="{Binding SelectedInterleaveFile, Mode=TwoWay}"
                           BorderThickness="1" BorderBrush="DarkGray" SelectionMode="Single"/>
                 <StackPanel Grid.Row="2" Grid.Column="1">
-                    <Button Command="{Binding AddInterleaveFile}" Content="Add" Margin="4,0,4,4" VerticalAlignment="Top"/>
-                    <Button Command="{Binding DeleteInterleaveFile}" Content="Delete" VerticalAlignment="Top"/>
-                    <Button Command="{Binding ClearInterleaveFiles}" Content="Delete all" VerticalAlignment="Top"/>
+                    <Button Command="{Binding AddInterleaveFileCommand}" Content="Add" Margin="4,0,4,4" VerticalAlignment="Top"/>
+                    <Button Command="{Binding DeleteInterleaveFileCommand}" Content="Delete" VerticalAlignment="Top"/>
+                    <Button Command="{Binding ClearInterleaveFilesCommand}" Content="Delete all" VerticalAlignment="Top"/>
                 </StackPanel>
 
-                <Button Command="{Binding Interleave}" Content="Interleave" VerticalAlignment="Top"
+                <Button Command="{Binding InterleaveCommand}" Content="Interleave" VerticalAlignment="Top"
                         Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left" />
             </Grid>
         </TabItem>
@@ -128,7 +128,7 @@
                             <Label Content="Path:" Margin="4"  VerticalAlignment="Center"/>
                             <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="4" Margin="4" IsReadOnly="True"
                                      Text="{Binding FileToReorder.FilePath, Mode=OneWay}" />
-                            <Button Command="{Binding SelectSplitFile}" Content="..." 
+                            <Button Command="{Binding SelectReorderFileCommand}" Content="..." 
                                     Grid.Column="5" Margin="4 0" Width="40"/>
                             <Label Grid.Row="1" Content="Filename:" Margin="4"  VerticalAlignment="Center"/>
                             <TextBox Grid.Row="1" Grid.Column="1" Margin="4" IsReadOnly="True"
@@ -140,7 +140,7 @@
                     </Grid>
                 </Border>
 
-                <Button Command="{Binding Reorder}" Content="Reorder" VerticalAlignment="Top"
+                <Button Command="{Binding ReorderCommand}" Content="Reorder" VerticalAlignment="Top"
                         Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" />
             </Grid>
         </TabItem>

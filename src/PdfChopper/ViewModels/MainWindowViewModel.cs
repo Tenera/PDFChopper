@@ -24,11 +24,47 @@ public partial class MainWindowViewModel : ObservableObject
     // Helper properties and methods
     private static Window? MainWindow => Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
 
+    public MainWindowViewModel()
+    {
+        // Subscribe to collection changes to update command CanExecute state
+        FilesToMerge.CollectionChanged += (_, __) =>
+        {
+            MergeCommand.NotifyCanExecuteChanged();
+            UpCommand.NotifyCanExecuteChanged();
+            DownCommand.NotifyCanExecuteChanged();
+            DeleteCommand.NotifyCanExecuteChanged();
+            ClearCommand.NotifyCanExecuteChanged();
+        };
+
+        FileExtracts.CollectionChanged += (_, __) =>
+        {
+            SplitCommand.NotifyCanExecuteChanged();
+            ClearExtractsCommand.NotifyCanExecuteChanged();
+            DeleteExtractCommand.NotifyCanExecuteChanged();
+            AddExtractCommand.NotifyCanExecuteChanged();
+        };
+
+        InterleaveFiles.CollectionChanged += (_, __) =>
+        {
+            InterleaveCommand.NotifyCanExecuteChanged();
+            ClearInterleaveFilesCommand.NotifyCanExecuteChanged();
+            DeleteInterleaveFileCommand.NotifyCanExecuteChanged();
+            AddInterleaveFileCommand.NotifyCanExecuteChanged();
+        };
+    }
+
     #region Merge
     public ObservableCollection<PdfFile> FilesToMerge { get; } = [];
 
     [ObservableProperty]
     private PdfFile? _selectedPdfFile;
+
+    partial void OnSelectedPdfFileChanged(PdfFile? value)
+    {
+        UpCommand.NotifyCanExecuteChanged();
+        DownCommand.NotifyCanExecuteChanged();
+        DeleteCommand.NotifyCanExecuteChanged();
+    }
 
     [RelayCommand]
     public async Task Add()
@@ -60,7 +96,7 @@ public partial class MainWindowViewModel : ObservableObject
             }
         }
 
-        OnPropertyChanged(nameof(CanMerge));
+        MergeCommand.NotifyCanExecuteChanged();
     }
 
     [RelayCommand(CanExecute = nameof(CanMerge))]
@@ -146,8 +182,8 @@ public partial class MainWindowViewModel : ObservableObject
 
         FilesToMerge.Remove(SelectedPdfFile);
 
-        OnPropertyChanged(nameof(CanClear));
-        OnPropertyChanged(nameof(CanMerge));
+        ClearCommand.NotifyCanExecuteChanged();
+        MergeCommand.NotifyCanExecuteChanged();
     }
 
     public bool CanDelete => SelectedPdfFile is not null;
@@ -156,8 +192,8 @@ public partial class MainWindowViewModel : ObservableObject
     public void Clear()
     {
         FilesToMerge.Clear();
-        OnPropertyChanged(nameof(CanMerge));
-        OnPropertyChanged(nameof(CanClear));
+        MergeCommand.NotifyCanExecuteChanged();
+        ClearCommand.NotifyCanExecuteChanged();
     }
 
     public bool CanClear => FilesToMerge.Any();
@@ -171,8 +207,19 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private PdfFile? _fileToSplit;
 
+    partial void OnFileToSplitChanged(PdfFile? value)
+    {
+        SplitCommand.NotifyCanExecuteChanged();
+        AddExtractCommand.NotifyCanExecuteChanged();
+    }
+
     [ObservableProperty]
     private PdfFileExtract? _selectedExtract;
+
+    partial void OnSelectedExtractChanged(PdfFileExtract? value)
+    {
+        DeleteExtractCommand.NotifyCanExecuteChanged();
+    }
 
     [RelayCommand]
     public async Task SelectSplitFile()
@@ -252,7 +299,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         FileExtracts.Add(new PdfFileExtract(FileToSplit!, result));
-        OnPropertyChanged(nameof(CanSplit));
+        SplitCommand.NotifyCanExecuteChanged();
         
     }
 
@@ -265,8 +312,8 @@ public partial class MainWindowViewModel : ObservableObject
 
         FileExtracts.Remove(SelectedExtract);
 
-        OnPropertyChanged(nameof(CanSplit));
-        OnPropertyChanged(nameof(CanClearExtracts));
+        SplitCommand.NotifyCanExecuteChanged();
+        ClearExtractsCommand.NotifyCanExecuteChanged();
     }
 
     public bool CanDeleteExtract => SelectedExtract != null;
@@ -275,8 +322,8 @@ public partial class MainWindowViewModel : ObservableObject
     public void ClearExtracts()
     {
         FileExtracts.Clear();
-        OnPropertyChanged(nameof(CanSplit));
-        OnPropertyChanged(nameof(CanClearExtracts));
+        SplitCommand.NotifyCanExecuteChanged();
+        ClearExtractsCommand.NotifyCanExecuteChanged();
     }
 
     public bool CanClearExtracts => FileExtracts.Any();
@@ -289,6 +336,11 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private PdfFile? _selectedInterleaveFile;
+
+    partial void OnSelectedInterleaveFileChanged(PdfFile? value)
+    {
+        DeleteInterleaveFileCommand.NotifyCanExecuteChanged();
+    }
 
     [RelayCommand(CanExecute = nameof(CanInterleave))]
     public async Task Interleave()
@@ -383,7 +435,7 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 InterleaveFiles.Add(new PdfFile(file));
             }
-            OnPropertyChanged(nameof(CanInterleave));
+            InterleaveCommand.NotifyCanExecuteChanged();
         }
     }
 
@@ -396,8 +448,8 @@ public partial class MainWindowViewModel : ObservableObject
 
         InterleaveFiles.Remove(SelectedInterleaveFile);
 
-        OnPropertyChanged(nameof(CanInterleave));
-        OnPropertyChanged(nameof(CanClearInterleaveFiles));
+        InterleaveCommand.NotifyCanExecuteChanged();
+        ClearInterleaveFilesCommand.NotifyCanExecuteChanged();
     }
 
     public bool CanDeleteInterleaveFile => SelectedInterleaveFile != null;
@@ -406,8 +458,8 @@ public partial class MainWindowViewModel : ObservableObject
     public void ClearInterleaveFiles()
     {
         InterleaveFiles.Clear();
-        OnPropertyChanged(nameof(CanInterleave));
-        OnPropertyChanged(nameof(CanClearInterleaveFiles));
+        InterleaveCommand.NotifyCanExecuteChanged();
+        ClearInterleaveFilesCommand.NotifyCanExecuteChanged();
     }
 
     public bool CanClearInterleaveFiles => FilesToMerge.Any();
@@ -422,6 +474,7 @@ public partial class MainWindowViewModel : ObservableObject
     partial void OnFileToReorderChanged(PdfFile? value)
     {
         OnPropertyChanged(nameof(CanReorder));
+        ReorderCommand.NotifyCanExecuteChanged();
     }
 
     [RelayCommand]

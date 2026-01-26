@@ -31,10 +31,17 @@
 
         <TabItem Header="Merge">
             <Grid RowDefinitions="*,Auto" ColumnDefinitions="*,Auto" Margin="0 4 0 8">
-                <DataGrid Grid.Column="0" Grid.Row="0" AutoGenerateColumns="True"
+                <DataGrid Grid.Column="0" Grid.Row="0" AutoGenerateColumns="False"
                           ItemsSource="{Binding FilesToMerge}" 
                           SelectedItem="{Binding SelectedPdfFile, Mode=TwoWay}"
-                          SelectionMode="Single" />
+                          SelectionMode="Single" >
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Path" Binding="{Binding FilePath}" IsReadOnly="True" Width="3*" />
+                        <DataGridTextColumn Header="Pages" Binding="{Binding PageCount}" IsReadOnly="True" Width="*" />
+                        <DataGridTextColumn Header="Start" Binding="{Binding StartPage, UpdateSourceTrigger=LostFocus}" Width="*" />
+                        <DataGridTextColumn Header="End" Binding="{Binding EndPage, UpdateSourceTrigger=LostFocus}" Width="*" />
+                    </DataGrid.Columns>
+                </DataGrid>
                 <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" Margin="4">
                     <Button Command="{Binding AddCommand}" Content="Add" Margin="4 0 4 4" />
                     <Button  Command="{Binding DeleteCommand}" Content="Delete" />
@@ -71,9 +78,15 @@
                     </Grid>
                 </Border>
                 <Label Content="Extracts:" Grid.Row="1" Margin="4,0,0,0"></Label>
-                <DataGrid Margin="4,0,4,4" Grid.Row="2" AutoGenerateColumns="True"
+                <DataGrid Margin="4,0,4,4" Grid.Row="2" AutoGenerateColumns="False"
                           ItemsSource="{Binding FileExtracts}" SelectedItem="{Binding SelectedExtract, Mode=TwoWay}"
-                          BorderThickness="1" BorderBrush="DarkGray" SelectionMode="Single"/>
+                          BorderThickness="1" BorderBrush="DarkGray" SelectionMode="Single">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Path" Binding="{Binding FilePath}" IsReadOnly="True" Width="3*" />
+                        <DataGridTextColumn Header="Start" Binding="{Binding StartPage, UpdateSourceTrigger=LostFocus}" Width="*" />
+                        <DataGridTextColumn Header="End" Binding="{Binding EndPage, UpdateSourceTrigger=LostFocus}" Width="*" />
+                    </DataGrid.Columns>
+                </DataGrid>
                 <StackPanel Grid.Row="2" Grid.Column="1">
                     <Button Command="{Binding AddExtractCommand}" Content="Add"  Margin="4 0 4 4"/>
                     <Button Command="{Binding DeleteExtractCommand}" Content="Delete" />
@@ -95,9 +108,16 @@
                     <Label>● ...</Label>
                 </StackPanel>
                 <Label Grid.Row="1" Content="Files to interleave:" Margin="4 0"></Label>
-                <DataGrid Margin="4" Grid.Row="2" AutoGenerateColumns="True"
+                <DataGrid Margin="4" Grid.Row="2" AutoGenerateColumns="False"
                           ItemsSource="{Binding InterleaveFiles}" SelectedItem="{Binding SelectedInterleaveFile, Mode=TwoWay}"
-                          BorderThickness="1" BorderBrush="DarkGray" SelectionMode="Single"/>
+                          BorderThickness="1" BorderBrush="DarkGray" SelectionMode="Single">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Path" Binding="{Binding FilePath}" IsReadOnly="True" Width="3*" />
+                        <DataGridTextColumn Header="Pages" Binding="{Binding PageCount}" IsReadOnly="True" Width="*" />
+                        <DataGridTextColumn Header="Start" Binding="{Binding StartPage, UpdateSourceTrigger=LostFocus}" Width="*" />
+                        <DataGridTextColumn Header="End" Binding="{Binding EndPage, UpdateSourceTrigger=LostFocus}" Width="*" />
+                    </DataGrid.Columns>
+                </DataGrid>
                 <StackPanel Grid.Row="2" Grid.Column="1">
                     <Button Command="{Binding AddInterleaveFileCommand}" Content="Add" Margin="4,0,4,4" VerticalAlignment="Top"/>
                     <Button Command="{Binding DeleteInterleaveFileCommand}" Content="Delete" VerticalAlignment="Top"/>

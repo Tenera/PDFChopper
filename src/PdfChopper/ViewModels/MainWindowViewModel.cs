@@ -49,7 +49,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (files.Length == 0) return;
 
-        foreach (var file in files)
+        foreach (var file in files.Where(x => !string.IsNullOrWhiteSpace(x)))
         {
             var fileInfo = new FileInfo(file);
             if (fileInfo.Exists
@@ -74,13 +74,13 @@ public partial class MainWindowViewModel : ObservableObject
             InitialFileName = "Merged.pdf"
         };
         var result = await dialog.ShowAsync(MainWindow);
-        if (result != null)
+        if (result is not null)
         {
             await CreateMergedFile(result);
         }
     }
 
-    private async Task CreateMergedFile(string dialogFileName)
+    private async Task CreateMergedFile(string fileName)
     {
         try
         {
@@ -94,7 +94,7 @@ public partial class MainWindowViewModel : ObservableObject
                 }
                 inputDocument.Close();
             }
-            await outputDocument.SaveAsync(dialogFileName);
+            await outputDocument.SaveAsync(fileName);
             outputDocument.Close();
             Console.WriteLine("Files merged successfully");
         }
@@ -147,6 +147,9 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private PdfFile? _fileToSplit;
 
+    [ObservableProperty]
+    private PdfFileExtract? _selectedExtract;
+
     [RelayCommand]
     public async Task SelectSplitFile()
     {
@@ -180,7 +183,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
-            if (FileToSplit == null || !FileExtracts.Any()) return;
+            if (FileToSplit is null || !FileExtracts.Any()) return;
 
             using var inputDocument = PdfReader.Open(FileToSplit.FilePath, PdfDocumentOpenMode.Import);
             foreach (var extract in FileExtracts)
@@ -216,11 +219,17 @@ public partial class MainWindowViewModel : ObservableObject
             InitialFileName = "Extract.pdf"
         };
         var result = await dialog.ShowAsync(MainWindow);
-        if (result != null)
+        if (string.IsNullOrWhiteSpace(result)) return;
+
+        if (FileExtracts.Any(x => x.FilePath.Equals(result, StringComparison.OrdinalIgnoreCase)))
         {
-            FileExtracts.Add(new PdfFileExtract(FileToSplit!, result));
-            OnPropertyChanged(nameof(CanSplit));
+            Console.WriteLine("A file with the same path is already in the list of extracts.");
+            return;
         }
+
+        FileExtracts.Add(new PdfFileExtract(FileToSplit!, result));
+        OnPropertyChanged(nameof(CanSplit));
+        
     }
 
     public bool CanAddExtract => FileToSplit != null;
@@ -237,14 +246,14 @@ public partial class MainWindowViewModel : ObservableObject
 
     public bool CanDeleteExtract => SelectedExtract != null;
 
-    [ObservableProperty]
-    private PdfFileExtract? _selectedExtract;
-
     #endregion
 
     #region Interleave
 
-    public ObservableCollection<PdfFile> InterleaveFiles { get; } = new ObservableCollection<PdfFile>();
+    public ObservableCollection<PdfFile> InterleaveFiles { get; } = [];
+
+    [ObservableProperty]
+    private PdfFile? _selectedInterleaveFile;
 
     [RelayCommand(CanExecute = nameof(CanInterleave))]
     public async Task Interleave()
@@ -258,10 +267,9 @@ public partial class MainWindowViewModel : ObservableObject
             InitialFileName = "Interleaved.pdf"
         };
         var result = await dialog.ShowAsync(MainWindow);
-        if (result != null)
-        {
-            await CreateInterleavedFile(result);
-        }
+        if (string.IsNullOrWhiteSpace(result)) return;
+
+        await CreateInterleavedFile(result);
     }
 
     private async Task CreateInterleavedFile(string filePath)
@@ -322,7 +330,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    public bool CanInterleave => InterleaveFiles?.Count > 1;
+    public bool CanInterleave => InterleaveFiles.Count > 1;
 
     [RelayCommand(CanExecute = nameof(CanAddInterleaveFile))]
     public async Task AddInterleaveFile()
@@ -331,12 +339,15 @@ public partial class MainWindowViewModel : ObservableObject
         {
             AllowMultiple = false,
             Filters = PdfFileDialogFilters,
-            Title = "Add file to interleave"
+            Title = "Add file(s) to interleave"
         };
         var result = await dialog.ShowAsync(MainWindow);
         if (result is { Length: > 0 })
         {
-            InterleaveFiles.Add(new PdfFile(result[0]));
+            foreach (var file in result)
+            {
+                InterleaveFiles.Add(new PdfFile(file));
+            }
             OnPropertyChanged(nameof(CanInterleave));
         }
     }
@@ -354,9 +365,6 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     public bool CanDeleteInterleaveFile => SelectedInterleaveFile != null;
-
-    [ObservableProperty]
-    private PdfFile? _selectedInterleaveFile;
 
     #endregion
 

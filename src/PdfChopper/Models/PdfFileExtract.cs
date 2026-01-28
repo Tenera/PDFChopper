@@ -1,65 +1,64 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace PdfChopper.Models
+namespace PdfChopper.Models;
+
+public class PdfFileExtract : INotifyPropertyChanged
 {
-    public class PdfFileExtract : INotifyPropertyChanged
+    private readonly PdfFile _parent;
+    private int _startPage;
+    private int _endPage;
+    private string _filePath;
+
+    public PdfFileExtract(PdfFile parent, string filePath)
     {
-        private readonly PdfFile _parent;
-        private int _startPage;
-        private int _endPage;
-        private string _filePath;
+        _parent = parent;
+        _filePath = filePath;
+        _startPage = 1;
+        _endPage = _parent.PageCount;
+    }
 
-        public PdfFileExtract(PdfFile parent, string filePath)
+    public string FilePath
+    {
+        get => _filePath;
+        set
         {
-            _parent = parent;
-            FilePath = filePath;
-            _startPage = 1;
-            _endPage = _parent.PageCount;
+            if (value == _filePath) return;
+            _filePath = value;
+            OnPropertyChanged();
         }
+    }
 
-        public string FilePath
+    public int StartPage
+    {
+        get => _startPage;
+        set
         {
-            get => _filePath;
-            set
-            {
-                if (value == _filePath) return;
-                _filePath = value;
-                OnPropertyChanged();
-            }
-        }
+            if (_startPage == value) return;
+            if (value > _parent.PageCount || value <= 0 || value > _endPage) return;
 
-        public int StartPage
+            _startPage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public int EndPage
+    {
+        get => _endPage;
+        set
         {
-            get => _startPage;
-            set
-            {
-                if (_startPage == value) return;
-                if (value > _parent.PageCount || value <= 0 || value > _endPage) return;
+            if (_endPage == value) return;
+            if (value > _parent.PageCount || value <= 0 || value < _startPage) return;
 
-                _startPage = value;
-                OnPropertyChanged();
-            }
+            _endPage = value;
+            OnPropertyChanged();
         }
+    }
 
-        public int EndPage
-        {
-            get => _endPage;
-            set
-            {
-                if (_endPage == value) return;
-                if (value > _parent.PageCount || value <= 0 || value < _startPage) return;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-                _endPage = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null!)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+    protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null!)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

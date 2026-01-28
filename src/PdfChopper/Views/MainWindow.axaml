@@ -98,6 +98,50 @@
             </Grid>
         </TabItem>
 
+        <TabItem Header="Rotate">
+            <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="*,Auto" Margin="0 4 0 8">
+                <Border BorderThickness="1" 
+                        BorderBrush="DarkGray" Margin="4" 
+                        Grid.ColumnSpan="2">
+                    <Grid RowDefinitions="Auto,*" Margin="4">
+                        <TextBlock Text="File to rotate pages in" FontWeight="Bold" Margin="4"/>
+                        <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto"
+                              RowDefinitions="Auto,Auto">
+                            <Label Content="Path:" Margin="4"  VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="4" Margin="4" IsReadOnly="True"
+                                     Text="{Binding FileToRotate.FilePath, Mode=OneWay}" />
+                            <Button Command="{Binding SelectRotateFileCommand}" 
+                                    Content="..." Grid.Column="5" Margin="4 0" Width="40"/>
+                            <Label Grid.Row="1" Content="Filename:" Margin="4"  VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Margin="4" IsReadOnly="True"
+                                     Text="{Binding FileToRotate.FileName, Mode=OneWay}"/>
+                            <Label Grid.Row="1" Grid.Column="2" Content="# pages:" Margin="4" VerticalAlignment="Center" />
+                            <TextBox Grid.Row="1" Grid.Column="3" Margin="4" IsReadOnly="True" Width="40"
+                                     Text="{Binding FileToRotate.PageCount, Mode=OneWay}"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+                <Label Content="Pages to rotate:" Grid.Row="1" Margin="4,0,0,0"></Label>
+                <DataGrid Margin="4,0,4,4" Grid.Row="2" AutoGenerateColumns="False"
+                          ItemsSource="{Binding FileParts}" SelectedItem="{Binding SelectedPart, Mode=TwoWay}"
+                          BorderThickness="1" BorderBrush="DarkGray" SelectionMode="Single">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Start" Binding="{Binding StartPage, UpdateSourceTrigger=LostFocus}" Width="*" />
+                        <DataGridTextColumn Header="End" Binding="{Binding EndPage, UpdateSourceTrigger=LostFocus}" Width="*" />
+                        <DataGridTextColumn Header="Rotation (# clockwise flips)" Binding="{Binding Rotate, UpdateSourceTrigger=LostFocus}" Width="3*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+                <StackPanel Grid.Row="2" Grid.Column="1">
+                    <Button Command="{Binding AddPartCommand}" Content="Add"  Margin="4 0 4 4"/>
+                    <Button Command="{Binding DeletePartCommand}" Content="Delete" />
+                    <Button Command="{Binding ClearPartsCommand}" Content="Delete all" />
+                </StackPanel>
+
+                <Button Command="{Binding RotateCommand}" Content="Rotate"
+                        Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left"/>
+            </Grid>
+        </TabItem>
+
         <TabItem Header="Interleave">
             <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="*,Auto" Margin="0 4 0 8">
                 <StackPanel Grid.Row="0" Orientation="Vertical" Margin="4">

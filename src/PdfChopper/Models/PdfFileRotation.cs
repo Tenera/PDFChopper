@@ -1,31 +1,20 @@
 using System.ComponentModel;
-using System.IO;
 using System.Runtime.CompilerServices;
-using PdfSharp.Pdf.IO;
 
 namespace PdfChopper.Models;
 
-public class PdfFile : INotifyPropertyChanged
+public class PdfFileRotation : INotifyPropertyChanged
 {
-    private int _endPage;
+    private readonly PdfFile _parent;
     private int _startPage;
+    private int _endPage;
 
-    public PdfFile(string filePath)
+    public PdfFileRotation(PdfFile parent)
     {
-        var file = new FileInfo(filePath);
-        using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-        PageCount = inputDocument.PageCount;
-        FileName = file.Name;
-        FilePath = filePath;
+        _parent = parent;
         _startPage = 1;
-        _endPage = PageCount;
+        _endPage = _parent.PageCount;
     }
-
-    public string FilePath { get; }
-
-    public string FileName { get; }
-
-    public int PageCount { get; }
 
     public int StartPage
     {
@@ -33,7 +22,7 @@ public class PdfFile : INotifyPropertyChanged
         set
         {
             if (_startPage == value) return;
-            if (value > PageCount || value <= 0 || value > _endPage) return;
+            if (value > _parent.PageCount || value <= 0 || value > _endPage) return;
 
             _startPage = value;
             OnPropertyChanged();
@@ -46,9 +35,20 @@ public class PdfFile : INotifyPropertyChanged
         set
         {
             if (_endPage == value) return;
-            if (value > PageCount || value <= 0 || value < _startPage) return;
+            if (value > _parent.PageCount || value <= 0 || value < _startPage) return;
 
             _endPage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public int Rotate
+    {
+        get;
+        set
+        {
+            if (field == value) return;
+            field = value % 4;
             OnPropertyChanged();
         }
     }

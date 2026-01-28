@@ -51,6 +51,14 @@ public partial class MainWindowViewModel : ObservableObject
             DeleteInterleaveFileCommand.NotifyCanExecuteChanged();
             AddInterleaveFileCommand.NotifyCanExecuteChanged();
         };
+
+        FileParts.CollectionChanged += (_, __) =>
+        {
+            SplitCommand.NotifyCanExecuteChanged();
+            ClearPartsCommand.NotifyCanExecuteChanged();
+            DeletePartCommand.NotifyCanExecuteChanged();
+            AddPartCommand.NotifyCanExecuteChanged();
+        };
     }
 
     #region Merge
@@ -242,6 +250,7 @@ public partial class MainWindowViewModel : ObservableObject
         try
         {
             FileToSplit = new PdfFile(filepath);
+            ClearExtracts();
         }
         catch (Exception)
         {
@@ -538,6 +547,144 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     public bool CanReorder => FileToReorder != null;
+
+    #endregion
+
+    #region Rotate
+
+    public ObservableCollection<PdfFileRotation> FileParts { get; } = [];
+
+    [ObservableProperty]
+    private PdfFile? _fileToRotate;
+
+    partial void OnFileToRotateChanged(PdfFile? value)
+    {
+        RotateCommand.NotifyCanExecuteChanged();
+        AddPartCommand.NotifyCanExecuteChanged();
+    }
+
+    [ObservableProperty]
+    private PdfFileRotation? _selectedPart;
+
+    partial void OnSelectedPartChanged(PdfFileRotation? value)
+    {
+        DeletePartCommand.NotifyCanExecuteChanged();
+    }
+
+    [RelayCommand]
+    public async Task SelectRotateFile()
+    {
+        var dialog = new OpenFileDialog
+        {
+            AllowMultiple = false,
+            Filters = PdfFileDialogFilters,
+            Title = "Select file to rotate pages in"
+        };
+        var result = await dialog.ShowAsync(MainWindow);
+        if (result is { Length: > 0 })
+        {
+            await SetRotateFile(result[0]);
+        }
+    }
+
+    private async Task SetRotateFile(string filepath)
+    {
+        try
+        {
+            FileToRotate = new PdfFile(filepath);
+            ClearParts();
+        }
+        catch (Exception)
+        {
+            await DialogService.ShowMessage("Invalid file", "Invalid file specified. Please select a valid PDF-file");
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRotate))]
+    public async Task Rotate()
+    {
+        var dialog = new SaveFileDialog
+        {
+            DefaultExtension = ".pdf",
+            Filters = PdfFileDialogFilters,
+            Title = "Save rotated file to",
+            ShowOverwritePrompt = true,
+            InitialFileName = "Rotated.pdf"
+        };
+        var result = await dialog.ShowAsync(MainWindow);
+        if (result is not null)
+        {
+            await CreateRotatedFile(result);
+        }
+    }
+
+    private async Task CreateRotatedFile(string fileName)
+    {
+        try
+        {
+            if (FileToRotate is null || !FileParts.Any()) return;
+
+            using var inputDocument = PdfReader.Open(FileToRotate.FilePath, PdfDocumentOpenMode.Import);
+            using var outputDocument = new PdfDocument();
+            foreach (var inputDocumentPage in inputDocument.Pages)
+            {
+                outputDocument.AddPage(inputDocumentPage);
+            }
+            foreach (var extract in FileParts)
+            {
+                for (var j = extract.StartPage; j <= extract.EndPage; j++)
+                {
+                    var rotation = (extract.Rotate % 4) * 90;
+                    if (rotation == 0) continue;
+
+                    var page = outputDocument.Pages[j - 1];
+                    page.Rotate = (page.Rotate + rotation);
+                }
+            }
+            await outputDocument.SaveAsync(fileName);
+            outputDocument.Close();
+            inputDocument.Close();
+            await DialogService.ShowMessage("Rotate successful", "File pages rotated successfully");
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessage("Error occurred", ex.Message);
+        }
+    }
+
+    public bool CanRotate => FileToRotate != null && FileParts.Any();
+
+    [RelayCommand(CanExecute = nameof(CanAddPart))]
+    public void AddPart()
+    {
+        FileParts.Add(new PdfFileRotation(FileToRotate!));
+        RotateCommand.NotifyCanExecuteChanged();
+    }
+
+    public bool CanAddPart => FileToRotate != null;
+
+    [RelayCommand(CanExecute = nameof(CanDeletePart))]
+    public void DeletePart()
+    {
+        if (SelectedPart == null) return;
+
+        FileParts.Remove(SelectedPart);
+
+        RotateCommand.NotifyCanExecuteChanged();
+        ClearPartsCommand.NotifyCanExecuteChanged();
+    }
+
+    public bool CanDeletePart => SelectedPart != null;
+
+    [RelayCommand(CanExecute = nameof(CanClearParts))]
+    public void ClearParts()
+    {
+        FileParts.Clear();
+        RotateCommand.NotifyCanExecuteChanged();
+        ClearPartsCommand.NotifyCanExecuteChanged();
+    }
+
+    public bool CanClearParts => FileParts.Any();
 
     #endregion
 }

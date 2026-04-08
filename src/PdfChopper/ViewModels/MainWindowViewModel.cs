@@ -404,7 +404,7 @@ public partial class MainWindowViewModel : ObservableObject
         ClearInterleaveFilesCommand.NotifyCanExecuteChanged();
     }
 
-    public bool CanClearInterleaveFiles => FilesToMerge.Any();
+    public bool CanClearInterleaveFiles => InterleaveFiles.Any();
 
     #endregion
 

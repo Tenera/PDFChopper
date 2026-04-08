@@ -40,10 +40,36 @@ public class PdfServiceReorderTests : IDisposable
 
     private static double GetPageWidth(string path, int pageIndex)
     {
-        using var doc = PdfReader.Open(path, PdfDocumentOpenMode.Modify);
-        var width = doc.Pages[pageIndex].Width.Point;
-        doc.Close();
-        return width;
+        using var doc = PdfReader.Open(path, PdfDocumentOpenMode.Import);
+        return doc.Pages[pageIndex].Width.Point;
+    }
+
+    [Fact]
+    public async Task ReorderAsync_SinglePage_ReturnsUnchanged()
+    {
+        var input = CreateIdentifiablePdf(1);
+        var output = Path.Combine(_tempDir, "reordered.pdf");
+
+        await PdfService.ReorderAsync(input, output);
+
+        TestHelper.GetPageCount(output).Should().Be(1);
+        GetPageWidth(output, 0).Should().Be(101);
+    }
+
+    [Fact]
+    public async Task ReorderAsync_TwoPages_InterleavesCorrectly()
+    {
+        // 2 pages, middle=1, isEven=true
+        // i=0: add page[0]=1, add page[1]=2 (i==middle-1 && isEven)
+        // Result: [1,2]
+        var input = CreateIdentifiablePdf(2);
+        var output = Path.Combine(_tempDir, "reordered.pdf");
+
+        await PdfService.ReorderAsync(input, output);
+
+        TestHelper.GetPageCount(output).Should().Be(2);
+        GetPageWidth(output, 0).Should().Be(101);
+        GetPageWidth(output, 1).Should().Be(102);
     }
 
     [Fact]

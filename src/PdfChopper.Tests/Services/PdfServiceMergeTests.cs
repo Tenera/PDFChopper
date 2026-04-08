@@ -26,7 +26,7 @@ public class PdfServiceMergeTests : IDisposable
         var file2 = TestHelper.CreateTestPdf(_tempDir, 2);
         var output = Path.Combine(_tempDir, "merged.pdf");
 
-        var files = new List<PdfFile> { new(file1), new(file2) };
+        var files = new List<PdfFile> { new(file1, 3), new(file2, 2) };
 
         await PdfService.MergeAsync(files, output);
 
@@ -39,7 +39,7 @@ public class PdfServiceMergeTests : IDisposable
         var file1 = TestHelper.CreateTestPdf(_tempDir, 4);
         var output = Path.Combine(_tempDir, "merged.pdf");
 
-        var pdfFile = new PdfFile(file1);
+        var pdfFile = new PdfFile(file1, 4);
         pdfFile.StartPage = 2;
         pdfFile.EndPage = 3;
 
@@ -54,7 +54,7 @@ public class PdfServiceMergeTests : IDisposable
         var file = TestHelper.CreateTestPdf(_tempDir, 5);
         var output = Path.Combine(_tempDir, "merged.pdf");
 
-        await PdfService.MergeAsync(new List<PdfFile> { new(file) }, output);
+        await PdfService.MergeAsync(new List<PdfFile> { new(file, 5) }, output);
 
         TestHelper.GetPageCount(output).Should().Be(5);
     }

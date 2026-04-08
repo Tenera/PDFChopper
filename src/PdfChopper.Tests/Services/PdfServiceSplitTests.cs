@@ -23,7 +23,7 @@ public class PdfServiceSplitTests : IDisposable
     public async Task SplitAsync_TwoExtracts_CreatesCorrectFiles()
     {
         var inputPath = TestHelper.CreateTestPdf(_tempDir, 4);
-        var parent = new PdfFile(inputPath);
+        var parent = new PdfFile(inputPath, TestHelper.GetPageCount(inputPath));
 
         var extract1 = new PdfFileExtract(parent, Path.Combine(_tempDir, "part1.pdf"));
         extract1.StartPage = 1;
@@ -43,7 +43,7 @@ public class PdfServiceSplitTests : IDisposable
     public async Task SplitAsync_SinglePageExtract_Works()
     {
         var inputPath = TestHelper.CreateTestPdf(_tempDir, 3);
-        var parent = new PdfFile(inputPath);
+        var parent = new PdfFile(inputPath, TestHelper.GetPageCount(inputPath));
 
         var extract = new PdfFileExtract(parent, Path.Combine(_tempDir, "single.pdf"));
         extract.StartPage = 2;

@@ -25,7 +25,7 @@ public class PdfServiceRotateTests : IDisposable
     {
         var inputPath = TestHelper.CreateTestPdf(_tempDir, 3);
         var outputPath = Path.Combine(_tempDir, "rotated.pdf");
-        var parent = new PdfFile(inputPath);
+        var parent = new PdfFile(inputPath, TestHelper.GetPageCount(inputPath));
 
         var part = new PdfFileRotation(parent);
         part.StartPage = 1;
@@ -46,7 +46,7 @@ public class PdfServiceRotateTests : IDisposable
     {
         var inputPath = TestHelper.CreateTestPdf(_tempDir, 2);
         var outputPath = Path.Combine(_tempDir, "rotated.pdf");
-        var parent = new PdfFile(inputPath);
+        var parent = new PdfFile(inputPath, TestHelper.GetPageCount(inputPath));
 
         var part = new PdfFileRotation(parent);
         part.Rotate = 0; // no rotation (0 mod 4 = 0)
@@ -64,7 +64,7 @@ public class PdfServiceRotateTests : IDisposable
     {
         var inputPath = TestHelper.CreateTestPdf(_tempDir, 1);
         var outputPath = Path.Combine(_tempDir, "rotated.pdf");
-        var parent = new PdfFile(inputPath);
+        var parent = new PdfFile(inputPath, TestHelper.GetPageCount(inputPath));
 
         var part = new PdfFileRotation(parent);
         part.Rotate = 5; // 5 mod 4 = 1, so 90 degrees

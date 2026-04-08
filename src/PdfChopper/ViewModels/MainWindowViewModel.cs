@@ -104,7 +104,7 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 try
                 {
-                    FilesToMerge.Add(new PdfFile(file));
+                    FilesToMerge.Add(await PdfFile.CreateAsync(file));
                 }
                 catch (Exception ex)
                 {
@@ -255,12 +255,12 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
-            FileToSplit = new PdfFile(filepath);
+            FileToSplit = await PdfFile.CreateAsync(filepath);
             ClearExtracts();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            await DialogService.ShowMessage( "Invalid file", "Invalid file specified. Please select a valid PDF-file");
+            await DialogService.ShowMessage("Invalid file", $"Could not open the selected file: {ex.Message}");
         }
     }
 
@@ -406,7 +406,7 @@ public partial class MainWindowViewModel : ObservableObject
                 if (filePath is null) continue;
                 try
                 {
-                    InterleaveFiles.Add(new PdfFile(filePath));
+                    InterleaveFiles.Add(await PdfFile.CreateAsync(filePath));
                 }
                 catch (Exception ex)
                 {
@@ -480,11 +480,11 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
-            FileToReorder = new PdfFile(filepath);
+            FileToReorder = await PdfFile.CreateAsync(filepath);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            await DialogService.ShowMessage("Invalid file", "Invalid file specified. Please select a valid PDF-file");
+            await DialogService.ShowMessage("Invalid file", $"Could not open the selected file: {ex.Message}");
         }
     }
 
@@ -494,7 +494,7 @@ public partial class MainWindowViewModel : ObservableObject
         try
         {
             if (FileToReorder == null) return;
-            var outputPath = FileToReorder.FilePath.Replace(".pdf", "_2.pdf");
+            var outputPath = FileToReorder.FilePath.Replace(".pdf", "_2.pdf", StringComparison.InvariantCultureIgnoreCase);
 
             await PdfService.ReorderAsync(FileToReorder.FilePath, outputPath);
             await DialogService.ShowMessage("Reordered successful", $"File reordered successfully to {outputPath}");
@@ -554,12 +554,12 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
-            FileToRotate = new PdfFile(filepath);
+            FileToRotate = await PdfFile.CreateAsync(filepath);
             ClearParts();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            await DialogService.ShowMessage("Invalid file", "Invalid file specified. Please select a valid PDF-file");
+            await DialogService.ShowMessage("Invalid file", $"Could not open the selected file: {ex.Message}");
         }
     }
 

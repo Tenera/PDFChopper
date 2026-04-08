@@ -35,6 +35,12 @@ dotnet build src/PdfChopper/PdfChopper.csproj
 dotnet run --project src/PdfChopper/PdfChopper.csproj
 ```
 
+## Test
+
+```bash
+dotnet test src/PdfChopper.Tests/PdfChopper.Tests.csproj
+```
+
 ## Publish
 
 The project is configured for AOT compilation and trimming:
@@ -43,11 +49,24 @@ The project is configured for AOT compilation and trimming:
 dotnet publish src/PdfChopper/PdfChopper.csproj -c Release
 ```
 
+## Project Structure
+
+```
+src/
+  PdfChopper/              # Main application
+    Models/                # PdfFile, PdfFileExtract, PdfFileRotation
+    Services/              # PdfService (PDF logic), DialogService
+    ViewModels/            # MainWindowViewModel (MVVM)
+    Views/                 # MainWindow (Avalonia XAML)
+  PdfChopper.Tests/        # xUnit tests for PdfService
+```
+
 ## Tech Stack
 
-- [Avalonia UI](https://avaloniaui.net/) 11.3 - Cross-platform .NET UI framework
+- [Avalonia UI](https://avaloniaui.net/) 12.0 - Cross-platform .NET UI framework
 - [PDFsharp](https://docs.pdfsharp.net/) 6.2 - PDF manipulation library
 - [CommunityToolkit.Mvvm](https://learn.microsoft.com/en-us/dotnet/communitytoolkit/mvvm/) - MVVM source generators and helpers
+- [xUnit](https://xunit.net/) + [FluentAssertions](https://fluentassertions.com/) - Testing
 
 ## License
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -8,8 +8,8 @@ using PdfChopper.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Platform.Storage;
 using PdfChopper.Services;
 
 
@@ -17,10 +17,12 @@ namespace PdfChopper.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
 {
-    private static readonly List<FileDialogFilter> PdfFileDialogFilters = [new() { Name = "PDF Files", Extensions = ["pdf"] }];
+    private static readonly FilePickerFileType PdfFileType = new("PDF Files") { Patterns = ["*.pdf"] };
 
-    // Helper properties and methods
-    private static Window? MainWindow => Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+    private static IStorageProvider? StorageProvider =>
+        Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
+            ? desktop.MainWindow?.StorageProvider
+            : null;
 
     public MainWindowViewModel()
     {
@@ -75,16 +77,18 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public async Task Add()
     {
-        var dialog = new OpenFileDialog
+        if (StorageProvider is not { CanOpen: true } provider) return;
+
+        var files = await provider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
+            Title = "Select files to merge",
             AllowMultiple = true,
-            Filters = PdfFileDialogFilters,
-            Title = "Select files to merge"
-        };
-        var result = await dialog.ShowAsync(MainWindow);
-        if (result is not null)
+            FileTypeFilter = [PdfFileType]
+        });
+
+        if (files.Count > 0)
         {
-            AddFiles(result);
+            AddFiles(files.Select(f => f.TryGetLocalPath()).Where(p => p is not null).ToArray()!);
         }
     }
 
@@ -108,18 +112,21 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanMerge))]
     public async Task Merge()
     {
-        var dialog = new SaveFileDialog
+        if (StorageProvider is not { CanSave: true } provider) return;
+
+        var file = await provider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            DefaultExtension = ".pdf",
-            Filters = PdfFileDialogFilters,
             Title = "Save merged file to",
+            DefaultExtension = "pdf",
+            FileTypeChoices = [PdfFileType],
             ShowOverwritePrompt = true,
-            InitialFileName = "Merged.pdf"
-        };
-        var result = await dialog.ShowAsync(MainWindow);
-        if (result is not null)
+            SuggestedFileName = "Merged.pdf"
+        });
+
+        var filePath = file?.TryGetLocalPath();
+        if (filePath is not null)
         {
-            await CreateMergedFile(result);
+            await CreateMergedFile(filePath);
         }
     }
 
@@ -219,16 +226,20 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public async Task SelectSplitFile()
     {
-        var dialog = new OpenFileDialog
+        if (StorageProvider is not { CanOpen: true } provider) return;
+
+        var files = await provider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
+            Title = "Select file to split",
             AllowMultiple = false,
-            Filters = PdfFileDialogFilters,
-            Title = "Select file to split"
-        };
-        var result = await dialog.ShowAsync(MainWindow);
-        if (result is { Length: > 0 })
+            FileTypeFilter = [PdfFileType]
+        });
+
+        if (files.Count > 0)
         {
-            await SetSplitFile(result[0]);
+            var filePath = files[0].TryGetLocalPath();
+            if (filePath is not null)
+                await SetSplitFile(filePath);
         }
     }
 
@@ -266,15 +277,18 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanAddExtract))]
     public async Task AddExtract()
     {
-        var dialog = new SaveFileDialog
+        if (StorageProvider is not { CanSave: true } provider) return;
+
+        var file = await provider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            DefaultExtension = ".pdf",
-            Filters = PdfFileDialogFilters,
             Title = "Save extract to",
+            DefaultExtension = "pdf",
+            FileTypeChoices = [PdfFileType],
             ShowOverwritePrompt = true,
-            InitialFileName = "Extract.pdf"
-        };
-        var result = await dialog.ShowAsync(MainWindow);
+            SuggestedFileName = "Extract.pdf"
+        });
+
+        var result = file?.TryGetLocalPath();
         if (string.IsNullOrWhiteSpace(result)) return;
 
         if (FileExtracts.Any(x => x.FilePath.Equals(result, StringComparison.OrdinalIgnoreCase)))
@@ -285,7 +299,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         FileExtracts.Add(new PdfFileExtract(FileToSplit!, result));
         SplitCommand.NotifyCanExecuteChanged();
-        
+
     }
 
     public bool CanAddExtract => FileToSplit != null;
@@ -330,18 +344,21 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanInterleave))]
     public async Task Interleave()
     {
-        var dialog = new SaveFileDialog
-        {
-            DefaultExtension = ".pdf",
-            Filters = PdfFileDialogFilters,
-            Title = "Save interleaved file to",
-            ShowOverwritePrompt = true,
-            InitialFileName = "Interleaved.pdf"
-        };
-        var result = await dialog.ShowAsync(MainWindow);
-        if (string.IsNullOrWhiteSpace(result)) return;
+        if (StorageProvider is not { CanSave: true } provider) return;
 
-        await CreateInterleavedFile(result);
+        var file = await provider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save interleaved file to",
+            DefaultExtension = "pdf",
+            FileTypeChoices = [PdfFileType],
+            ShowOverwritePrompt = true,
+            SuggestedFileName = "Interleaved.pdf"
+        });
+
+        var filePath = file?.TryGetLocalPath();
+        if (string.IsNullOrWhiteSpace(filePath)) return;
+
+        await CreateInterleavedFile(filePath);
     }
 
     private async Task CreateInterleavedFile(string filePath)
@@ -364,18 +381,22 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanAddInterleaveFile))]
     public async Task AddInterleaveFile()
     {
-        var dialog = new OpenFileDialog
+        if (StorageProvider is not { CanOpen: true } provider) return;
+
+        var files = await provider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
+            Title = "Add file(s) to interleave",
             AllowMultiple = false,
-            Filters = PdfFileDialogFilters,
-            Title = "Add file(s) to interleave"
-        };
-        var result = await dialog.ShowAsync(MainWindow);
-        if (result is { Length: > 0 })
+            FileTypeFilter = [PdfFileType]
+        });
+
+        if (files.Count > 0)
         {
-            foreach (var file in result)
+            foreach (var file in files)
             {
-                InterleaveFiles.Add(new PdfFile(file));
+                var filePath = file.TryGetLocalPath();
+                if (filePath is not null)
+                    InterleaveFiles.Add(new PdfFile(filePath));
             }
             InterleaveCommand.NotifyCanExecuteChanged();
         }
@@ -422,16 +443,20 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public async Task SelectReorderFile()
     {
-        var dialog = new OpenFileDialog
+        if (StorageProvider is not { CanOpen: true } provider) return;
+
+        var files = await provider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
+            Title = "Select file to reorder",
             AllowMultiple = false,
-            Filters = PdfFileDialogFilters,
-            Title = "Select file to reorder"
-        };
-        var result = await dialog.ShowAsync(MainWindow);
-        if (result is { Length: > 0 })
+            FileTypeFilter = [PdfFileType]
+        });
+
+        if (files.Count > 0)
         {
-            await SetReorderFile(result[0]);
+            var filePath = files[0].TryGetLocalPath();
+            if (filePath is not null)
+                await SetReorderFile(filePath);
         }
     }
 
@@ -447,7 +472,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanReorder))]   
+    [RelayCommand(CanExecute = nameof(CanReorder))]
     public async Task Reorder()
     {
         try
@@ -492,16 +517,20 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public async Task SelectRotateFile()
     {
-        var dialog = new OpenFileDialog
+        if (StorageProvider is not { CanOpen: true } provider) return;
+
+        var files = await provider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
+            Title = "Select file to rotate pages in",
             AllowMultiple = false,
-            Filters = PdfFileDialogFilters,
-            Title = "Select file to rotate pages in"
-        };
-        var result = await dialog.ShowAsync(MainWindow);
-        if (result is { Length: > 0 })
+            FileTypeFilter = [PdfFileType]
+        });
+
+        if (files.Count > 0)
         {
-            await SetRotateFile(result[0]);
+            var filePath = files[0].TryGetLocalPath();
+            if (filePath is not null)
+                await SetRotateFile(filePath);
         }
     }
 
@@ -521,18 +550,21 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanRotate))]
     public async Task Rotate()
     {
-        var dialog = new SaveFileDialog
+        if (StorageProvider is not { CanSave: true } provider) return;
+
+        var file = await provider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            DefaultExtension = ".pdf",
-            Filters = PdfFileDialogFilters,
             Title = "Save rotated file to",
+            DefaultExtension = "pdf",
+            FileTypeChoices = [PdfFileType],
             ShowOverwritePrompt = true,
-            InitialFileName = "Rotated.pdf"
-        };
-        var result = await dialog.ShowAsync(MainWindow);
-        if (result is not null)
+            SuggestedFileName = "Rotated.pdf"
+        });
+
+        var filePath = file?.TryGetLocalPath();
+        if (filePath is not null)
         {
-            await CreateRotatedFile(result);
+            await CreateRotatedFile(filePath);
         }
     }
 

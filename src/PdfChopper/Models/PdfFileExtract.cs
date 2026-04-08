@@ -1,9 +1,8 @@
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace PdfChopper.Models;
 
-public class PdfFileExtract : INotifyPropertyChanged
+public class PdfFileExtract : ObservableObject
 {
     private readonly PdfFile _parent;
     private int _startPage;
@@ -53,12 +52,5 @@ public class PdfFileExtract : INotifyPropertyChanged
             _endPage = value;
             OnPropertyChanged();
         }
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null!)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

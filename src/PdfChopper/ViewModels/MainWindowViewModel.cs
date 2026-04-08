@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -41,7 +40,6 @@ public partial class MainWindowViewModel : ObservableObject
             SplitCommand.NotifyCanExecuteChanged();
             ClearExtractsCommand.NotifyCanExecuteChanged();
             DeleteExtractCommand.NotifyCanExecuteChanged();
-            AddExtractCommand.NotifyCanExecuteChanged();
         };
 
         InterleaveFiles.CollectionChanged += (_, __) =>
@@ -49,7 +47,6 @@ public partial class MainWindowViewModel : ObservableObject
             InterleaveCommand.NotifyCanExecuteChanged();
             ClearInterleaveFilesCommand.NotifyCanExecuteChanged();
             DeleteInterleaveFileCommand.NotifyCanExecuteChanged();
-            AddInterleaveFileCommand.NotifyCanExecuteChanged();
         };
 
         FileParts.CollectionChanged += (_, __) =>
@@ -57,7 +54,6 @@ public partial class MainWindowViewModel : ObservableObject
             RotateCommand.NotifyCanExecuteChanged();
             ClearPartsCommand.NotifyCanExecuteChanged();
             DeletePartCommand.NotifyCanExecuteChanged();
-            AddPartCommand.NotifyCanExecuteChanged();
         };
     }
 
@@ -113,8 +109,6 @@ public partial class MainWindowViewModel : ObservableObject
                 }
             }
         }
-
-        MergeCommand.NotifyCanExecuteChanged();
     }
 
     [RelayCommand(CanExecute = nameof(CanMerge))]
@@ -181,19 +175,15 @@ public partial class MainWindowViewModel : ObservableObject
         SelectedPdfFile = selectedFile;
     }
 
-    public bool CanDown => SelectedPdfFile != null
+    public bool CanDown => SelectedPdfFile is not null
                            && FilesToMerge.Any()
                            && FilesToMerge.IndexOf(SelectedPdfFile) < FilesToMerge.Count - 1;
 
     [RelayCommand(CanExecute = nameof(CanDelete))]
     public void Delete()
     {
-        if (SelectedPdfFile == null) return;
-
+        if (SelectedPdfFile is null) return;
         FilesToMerge.Remove(SelectedPdfFile);
-
-        ClearCommand.NotifyCanExecuteChanged();
-        MergeCommand.NotifyCanExecuteChanged();
     }
 
     public bool CanDelete => SelectedPdfFile is not null;
@@ -202,8 +192,6 @@ public partial class MainWindowViewModel : ObservableObject
     public void Clear()
     {
         FilesToMerge.Clear();
-        MergeCommand.NotifyCanExecuteChanged();
-        ClearCommand.NotifyCanExecuteChanged();
     }
 
     public bool CanClear => FilesToMerge.Any();
@@ -280,7 +268,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    public bool CanSplit => FileToSplit != null && FileExtracts.Any();
+    public bool CanSplit => FileToSplit is not null && FileExtracts.Any();
 
     [RelayCommand(CanExecute = nameof(CanAddExtract))]
     public async Task AddExtract()
@@ -306,31 +294,23 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         FileExtracts.Add(new PdfFileExtract(FileToSplit!, result));
-        SplitCommand.NotifyCanExecuteChanged();
-
     }
 
-    public bool CanAddExtract => FileToSplit != null;
+    public bool CanAddExtract => FileToSplit is not null;
 
     [RelayCommand(CanExecute = nameof(CanDeleteExtract))]
     public void DeleteExtract()
     {
-        if (SelectedExtract == null) return;
-
+        if (SelectedExtract is null) return;
         FileExtracts.Remove(SelectedExtract);
-
-        SplitCommand.NotifyCanExecuteChanged();
-        ClearExtractsCommand.NotifyCanExecuteChanged();
     }
 
-    public bool CanDeleteExtract => SelectedExtract != null;
+    public bool CanDeleteExtract => SelectedExtract is not null;
 
     [RelayCommand(CanExecute = nameof(CanClearExtracts))]
     public void ClearExtracts()
     {
         FileExtracts.Clear();
-        SplitCommand.NotifyCanExecuteChanged();
-        ClearExtractsCommand.NotifyCanExecuteChanged();
     }
 
     public bool CanClearExtracts => FileExtracts.Any();
@@ -386,7 +366,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     public bool CanInterleave => InterleaveFiles.Count > 1;
 
-    [RelayCommand(CanExecute = nameof(CanAddInterleaveFile))]
+    [RelayCommand]
     public async Task AddInterleaveFile()
     {
         if (StorageProvider is not { CanOpen: true } provider) return;
@@ -414,31 +394,22 @@ public partial class MainWindowViewModel : ObservableObject
                         $"Skipping '{Path.GetFileName(filePath)}': {ex.Message}");
                 }
             }
-            InterleaveCommand.NotifyCanExecuteChanged();
         }
     }
-
-    public bool CanAddInterleaveFile => true;
 
     [RelayCommand(CanExecute = nameof(CanDeleteInterleaveFile))]
     public void DeleteInterleaveFile()
     {
-        if (SelectedInterleaveFile == null) return;
-
+        if (SelectedInterleaveFile is null) return;
         InterleaveFiles.Remove(SelectedInterleaveFile);
-
-        InterleaveCommand.NotifyCanExecuteChanged();
-        ClearInterleaveFilesCommand.NotifyCanExecuteChanged();
     }
 
-    public bool CanDeleteInterleaveFile => SelectedInterleaveFile != null;
+    public bool CanDeleteInterleaveFile => SelectedInterleaveFile is not null;
 
     [RelayCommand(CanExecute = nameof(CanClearInterleaveFiles))]
     public void ClearInterleaveFiles()
     {
         InterleaveFiles.Clear();
-        InterleaveCommand.NotifyCanExecuteChanged();
-        ClearInterleaveFilesCommand.NotifyCanExecuteChanged();
     }
 
     public bool CanClearInterleaveFiles => InterleaveFiles.Any();
@@ -493,7 +464,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
-            if (FileToReorder == null) return;
+            if (FileToReorder is null) return;
             var outputPath = FileToReorder.FilePath.Replace(".pdf", "_2.pdf", StringComparison.InvariantCultureIgnoreCase);
 
             await PdfService.ReorderAsync(FileToReorder.FilePath, outputPath);
@@ -505,7 +476,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    public bool CanReorder => FileToReorder != null;
+    public bool CanReorder => FileToReorder is not null;
 
     #endregion
 
@@ -599,36 +570,29 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    public bool CanRotate => FileToRotate != null && FileParts.Any();
+    public bool CanRotate => FileToRotate is not null && FileParts.Any();
 
     [RelayCommand(CanExecute = nameof(CanAddPart))]
     public void AddPart()
     {
         FileParts.Add(new PdfFileRotation(FileToRotate!));
-        RotateCommand.NotifyCanExecuteChanged();
     }
 
-    public bool CanAddPart => FileToRotate != null;
+    public bool CanAddPart => FileToRotate is not null;
 
     [RelayCommand(CanExecute = nameof(CanDeletePart))]
     public void DeletePart()
     {
-        if (SelectedPart == null) return;
-
+        if (SelectedPart is null) return;
         FileParts.Remove(SelectedPart);
-
-        RotateCommand.NotifyCanExecuteChanged();
-        ClearPartsCommand.NotifyCanExecuteChanged();
     }
 
-    public bool CanDeletePart => SelectedPart != null;
+    public bool CanDeletePart => SelectedPart is not null;
 
     [RelayCommand(CanExecute = nameof(CanClearParts))]
     public void ClearParts()
     {
         FileParts.Clear();
-        RotateCommand.NotifyCanExecuteChanged();
-        ClearPartsCommand.NotifyCanExecuteChanged();
     }
 
     public bool CanClearParts => FileParts.Any();

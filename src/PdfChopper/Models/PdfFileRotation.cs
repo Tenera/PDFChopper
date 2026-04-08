@@ -1,9 +1,8 @@
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace PdfChopper.Models;
 
-public class PdfFileRotation : INotifyPropertyChanged
+public class PdfFileRotation : ObservableObject
 {
     private readonly PdfFile _parent;
     private int _startPage;
@@ -52,12 +51,5 @@ public class PdfFileRotation : INotifyPropertyChanged
             field = normalized;
             OnPropertyChanged();
         }
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null!)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

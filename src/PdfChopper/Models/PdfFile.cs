@@ -1,12 +1,11 @@
-using System.ComponentModel;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
 using PdfChopper.Services;
 
 namespace PdfChopper.Models;
 
-public class PdfFile : INotifyPropertyChanged
+public class PdfFile : ObservableObject
 {
     private int _endPage;
     private int _startPage;
@@ -56,12 +55,5 @@ public class PdfFile : INotifyPropertyChanged
             _endPage = value;
             OnPropertyChanged();
         }
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null!)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

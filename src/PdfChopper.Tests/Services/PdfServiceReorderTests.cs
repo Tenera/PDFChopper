@@ -34,7 +34,6 @@ public class PdfServiceReorderTests : IDisposable
             doc.AddPage(page);
         }
         doc.Save(path);
-        doc.Close();
         return path;
     }
 

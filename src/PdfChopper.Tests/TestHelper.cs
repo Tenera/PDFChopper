@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Threading.Tasks;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 
@@ -18,16 +17,13 @@ public static class TestHelper
             doc.AddPage(new PdfPage());
         }
         doc.Save(path);
-        doc.Close();
         return path;
     }
 
     public static int GetPageCount(string path)
     {
         using var doc = PdfReader.Open(path, PdfDocumentOpenMode.Import);
-        var count = doc.PageCount;
-        doc.Close();
-        return count;
+        return doc.PageCount;
     }
 
     public static string CreateTempDir()

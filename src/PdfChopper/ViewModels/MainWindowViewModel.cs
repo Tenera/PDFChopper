@@ -54,7 +54,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         FileParts.CollectionChanged += (_, __) =>
         {
-            SplitCommand.NotifyCanExecuteChanged();
+            RotateCommand.NotifyCanExecuteChanged();
             ClearPartsCommand.NotifyCanExecuteChanged();
             DeletePartCommand.NotifyCanExecuteChanged();
             AddPartCommand.NotifyCanExecuteChanged();
@@ -88,11 +88,11 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (files.Count > 0)
         {
-            AddFiles(files.Select(f => f.TryGetLocalPath()).Where(p => p is not null).ToArray()!);
+            await AddFiles(files.Select(f => f.TryGetLocalPath()).Where(p => p is not null).ToArray()!);
         }
     }
 
-    private void AddFiles(string[] files)
+    private async Task AddFiles(string[] files)
     {
         if (files.Length == 0) return;
 
@@ -102,7 +102,15 @@ public partial class MainWindowViewModel : ObservableObject
             if (fileInfo.Exists
                 && string.Equals(fileInfo.Extension, ".pdf", StringComparison.OrdinalIgnoreCase))
             {
-                FilesToMerge.Add(new PdfFile(file));
+                try
+                {
+                    FilesToMerge.Add(new PdfFile(file));
+                }
+                catch (Exception ex)
+                {
+                    await DialogService.ShowMessage("Could not open file",
+                        $"Skipping '{fileInfo.Name}': {ex.Message}");
+                }
             }
         }
 
@@ -395,8 +403,16 @@ public partial class MainWindowViewModel : ObservableObject
             foreach (var file in files)
             {
                 var filePath = file.TryGetLocalPath();
-                if (filePath is not null)
+                if (filePath is null) continue;
+                try
+                {
                     InterleaveFiles.Add(new PdfFile(filePath));
+                }
+                catch (Exception ex)
+                {
+                    await DialogService.ShowMessage("Could not open file",
+                        $"Skipping '{Path.GetFileName(filePath)}': {ex.Message}");
+                }
             }
             InterleaveCommand.NotifyCanExecuteChanged();
         }

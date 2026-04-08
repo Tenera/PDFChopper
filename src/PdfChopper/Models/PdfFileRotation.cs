@@ -47,8 +47,9 @@ public class PdfFileRotation : INotifyPropertyChanged
         get;
         set
         {
-            if (field == value) return;
-            field = value % 4;
+            var normalized = ((value % 4) + 4) % 4;
+            if (field == normalized) return;
+            field = normalized;
             OnPropertyChanged();
         }
     }

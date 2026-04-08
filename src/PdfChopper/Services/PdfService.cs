@@ -100,13 +100,13 @@ public static class PdfService
             }
             foreach (var part in parts)
             {
+                var rotation = part.Rotate * 90;
+                if (rotation == 0) continue;
+
                 for (var j = part.StartPage; j <= part.EndPage; j++)
                 {
-                    var rotation = (part.Rotate % 4) * 90;
-                    if (rotation == 0) continue;
-
                     var page = outputDocument.Pages[j - 1];
-                    page.Rotate = (page.Rotate + rotation);
+                    page.Rotate = (page.Rotate + rotation) % 360;
                 }
             }
             await outputDocument.SaveAsync(outputPath);

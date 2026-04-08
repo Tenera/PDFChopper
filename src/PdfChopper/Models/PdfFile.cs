@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
-using PdfSharp.Pdf.IO;
+using PdfChopper.Services;
 
 namespace PdfChopper.Models;
 
@@ -13,8 +13,7 @@ public class PdfFile : INotifyPropertyChanged
     public PdfFile(string filePath)
     {
         var file = new FileInfo(filePath);
-        using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-        PageCount = inputDocument.PageCount;
+        PageCount = PdfService.GetPageCount(filePath);
         FileName = file.Name;
         FilePath = filePath;
         _startPage = 1;

@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="PdfChopper/PdfChopper.csproj" />
+  <Project Path="PdfChopper.Tests/PdfChopper.Tests.csproj" />
 </Solution>

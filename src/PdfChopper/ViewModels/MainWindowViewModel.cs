@@ -5,8 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using PdfChopper.Models;
-using PdfSharp.Pdf;
-using PdfSharp.Pdf.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Avalonia;
@@ -129,18 +127,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
-            using var outputDocument = new PdfDocument();
-            foreach (var file in FilesToMerge)
-            {
-                using var inputDocument = PdfReader.Open(file.FilePath, PdfDocumentOpenMode.Import);
-                for (var j = file.StartPage; j <= file.EndPage; j++)
-                {
-                    outputDocument.AddPage(inputDocument.Pages[j - 1]);
-                }
-                inputDocument.Close();
-            }
-            await outputDocument.SaveAsync(fileName);
-            outputDocument.Close();
+            await PdfService.MergeAsync(FilesToMerge, fileName);
             await DialogService.ShowMessage("Merge successful", "Files merged successfully");
         }
         catch (Exception ex)
@@ -265,18 +252,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             if (FileToSplit is null || !FileExtracts.Any()) return;
 
-            using var inputDocument = PdfReader.Open(FileToSplit.FilePath, PdfDocumentOpenMode.Import);
-            foreach (var extract in FileExtracts)
-            {
-                using var outputDocument = new PdfDocument();
-                for (var j = extract.StartPage; j <= extract.EndPage; j++)
-                {
-                    outputDocument.AddPage(inputDocument.Pages[j - 1]);
-                }
-                await outputDocument.SaveAsync(extract.FilePath);
-                outputDocument.Close();
-            }
-            inputDocument.Close();
+            await PdfService.SplitAsync(FileToSplit.FilePath, FileExtracts);
             await DialogService.ShowMessage("Split successful", "File split successfully");
         }
         catch (Exception ex)
@@ -370,59 +346,16 @@ public partial class MainWindowViewModel : ObservableObject
 
     private async Task CreateInterleavedFile(string filePath)
     {
-        var openDocs = new List<PdfDocument>(InterleaveFiles.Count);
         try
         {
             if (InterleaveFiles.Count <= 1) return;
 
-            // Read all files and enqueue their pages
-            var pageQueues = new List<Queue<PdfPage>>();
-            foreach (var interleaveFile in InterleaveFiles)
-            {
-                var q = new Queue<PdfPage>();
-                var inputDocument = PdfReader.Open(interleaveFile.FilePath, PdfDocumentOpenMode.Import);
-                openDocs.Add(inputDocument);
-                for (var j = interleaveFile.StartPage; j <= interleaveFile.EndPage; j++)
-                {
-                    q.Enqueue(inputDocument.Pages[j - 1]);
-                }
-
-                pageQueues.Add(q);
-            }
-
-            // Dequeue pages in round-robin fashion and add to output document
-            using var outputDocument = new PdfDocument();
-            var pagesAdded = true;
-            while (pagesAdded)
-            {
-                pagesAdded = false;
-                foreach (var pageQueue in pageQueues)
-                {
-                    if (pageQueue.Count > 0)
-                    {
-                        outputDocument.Pages.Add(pageQueue.Dequeue());
-                        pagesAdded = true;
-                    }
-                }
-            }
-
-            await outputDocument.SaveAsync(filePath);
-            outputDocument.Close();
-
+            await PdfService.InterleaveAsync(InterleaveFiles, filePath);
             await DialogService.ShowMessage("Interleave successful", "Files interleaved successfully");
         }
         catch (Exception ex)
         {
             await DialogService.ShowMessage("Error occurred", ex.Message);
-        }
-        finally
-        {
-            // Close and dispose all opened documents
-            foreach (var pdfDocument in openDocs)
-            {
-                pdfDocument.Close();
-                pdfDocument.Dispose();
-            }
         }
     }
 
@@ -522,22 +455,7 @@ public partial class MainWindowViewModel : ObservableObject
             if (FileToReorder == null) return;
             var outputPath = FileToReorder.FilePath.Replace(".pdf", "_2.pdf");
 
-            using var inputDocument = PdfReader.Open(FileToReorder.FilePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
-            var isEven = inputDocument.PageCount % 2 == 0;
-            var middle = isEven ? inputDocument.PageCount / 2 : (inputDocument.PageCount / 2) + 1;
-            for (var i = 0; i < middle; i++)
-            {
-                outputDocument.Pages.Add(inputDocument.Pages[i]);
-                if (i < middle - 1 || i == middle - 1 && isEven)
-                {
-                    outputDocument.Pages.Add(inputDocument.Pages[inputDocument.PageCount - i - 1]);
-                }
-            }
-            await outputDocument.SaveAsync(outputPath);
-            outputDocument.Close();
-            inputDocument.Close();
-
+            await PdfService.ReorderAsync(FileToReorder.FilePath, outputPath);
             await DialogService.ShowMessage("Reordered successful", $"File reordered successfully to {outputPath}");
         }
         catch (Exception ex)
@@ -624,26 +542,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             if (FileToRotate is null || !FileParts.Any()) return;
 
-            using var inputDocument = PdfReader.Open(FileToRotate.FilePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
-            foreach (var inputDocumentPage in inputDocument.Pages)
-            {
-                outputDocument.AddPage(inputDocumentPage);
-            }
-            foreach (var extract in FileParts)
-            {
-                for (var j = extract.StartPage; j <= extract.EndPage; j++)
-                {
-                    var rotation = (extract.Rotate % 4) * 90;
-                    if (rotation == 0) continue;
-
-                    var page = outputDocument.Pages[j - 1];
-                    page.Rotate = (page.Rotate + rotation);
-                }
-            }
-            await outputDocument.SaveAsync(fileName);
-            outputDocument.Close();
-            inputDocument.Close();
+            await PdfService.RotateAsync(FileToRotate.FilePath, FileParts, fileName);
             await DialogService.ShowMessage("Rotate successful", "File pages rotated successfully");
         }
         catch (Exception ex)

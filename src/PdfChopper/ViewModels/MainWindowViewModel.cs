@@ -393,8 +393,8 @@ public partial class MainWindowViewModel : ObservableObject
 
         var files = await provider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Add file(s) to interleave",
-            AllowMultiple = false,
+            Title = "Add files to interleave",
+            AllowMultiple = true,
             FileTypeFilter = [PdfFileType]
         });
 

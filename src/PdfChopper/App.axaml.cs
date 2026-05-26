@@ -20,9 +20,11 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var toastManager = new SukiToastManager();
+            var pdfService = new PdfService();
+            var dialogService = new DialogService(toastManager);
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel(toastManager, new PdfService()),
+                DataContext = new MainWindowViewModel(toastManager, pdfService, dialogService),
             };
         }
 

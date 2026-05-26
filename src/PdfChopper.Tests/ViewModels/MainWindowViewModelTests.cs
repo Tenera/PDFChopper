@@ -1,3 +1,6 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Headless.XUnit;
 using FluentAssertions;
 using PdfChopper.Models;
@@ -11,7 +14,15 @@ namespace PdfChopper.Tests.ViewModels;
 public class MainWindowViewModelTests
 {
     private static MainWindowViewModel CreateViewModel() =>
-        new(new SukiToastManager(), new StubPdfService());
+        new(new SukiToastManager(), new StubPdfService(), new StubDialogService());
+
+    private static (MainWindowViewModel Vm, StubDialogService Dialog, StubPdfService PdfService) CreateViewModelWithStubs()
+    {
+        var dialog = new StubDialogService();
+        var pdfService = new StubPdfService();
+        var vm = new MainWindowViewModel(new SukiToastManager(), pdfService, dialog);
+        return (vm, dialog, pdfService);
+    }
 
     #region Merge
 
@@ -419,6 +430,210 @@ public class MainWindowViewModelTests
         var vm = CreateViewModel();
 
         vm.IsDarkTheme.Should().BeFalse();
+    }
+
+    #endregion
+
+    #region Dialog - Split
+
+    [AvaloniaFact]
+    public async Task Split_ShowsSuccessDialog()
+    {
+        var (vm, dialog, _) = CreateViewModelWithStubs();
+        vm.FileToSplit = new PdfFile("test.pdf", 5);
+        vm.FileExtracts.Add(new PdfFileExtract(5, "out.pdf"));
+
+        await vm.Split();
+
+        dialog.Calls.Should().ContainSingle()
+            .Which.Should().Be(("Success", "Split successful", "File split successfully"));
+    }
+
+    [AvaloniaFact]
+    public async Task Split_ShowsErrorDialogOnFailure()
+    {
+        var (vm, dialog, pdfService) = CreateViewModelWithStubs();
+        pdfService.ExceptionToThrow = new InvalidOperationException("corrupt file");
+        vm.FileToSplit = new PdfFile("test.pdf", 5);
+        vm.FileExtracts.Add(new PdfFileExtract(5, "out.pdf"));
+
+        await vm.Split();
+
+        dialog.Calls.Should().ContainSingle()
+            .Which.Should().Be(("Error", "Error occurred", "corrupt file"));
+    }
+
+    #endregion
+
+    #region Dialog - Merge
+
+    [AvaloniaFact]
+    public async Task CreateMergedFile_ShowsSuccessDialog()
+    {
+        var (vm, dialog, _) = CreateViewModelWithStubs();
+        vm.FilesToMerge.Add(new PdfFile("a.pdf", 5));
+        vm.FilesToMerge.Add(new PdfFile("b.pdf", 3));
+
+        await vm.CreateMergedFile("output.pdf");
+
+        dialog.Calls.Should().ContainSingle()
+            .Which.Should().Be(("Success", "Merge successful", "Files merged successfully"));
+    }
+
+    [AvaloniaFact]
+    public async Task CreateMergedFile_ShowsErrorDialogOnFailure()
+    {
+        var (vm, dialog, pdfService) = CreateViewModelWithStubs();
+        pdfService.ExceptionToThrow = new InvalidOperationException("write error");
+        vm.FilesToMerge.Add(new PdfFile("a.pdf", 5));
+        vm.FilesToMerge.Add(new PdfFile("b.pdf", 3));
+
+        await vm.CreateMergedFile("output.pdf");
+
+        dialog.Calls.Should().ContainSingle()
+            .Which.Should().Be(("Error", "Error occurred", "write error"));
+    }
+
+    #endregion
+
+    #region Dialog - Rotate
+
+    [AvaloniaFact]
+    public async Task CreateRotatedFile_ShowsSuccessDialog()
+    {
+        var (vm, dialog, _) = CreateViewModelWithStubs();
+        vm.FileToRotate = new PdfFile("test.pdf", 5);
+        vm.FileParts.Add(new PdfFileRotation(5));
+
+        await vm.CreateRotatedFile("output.pdf");
+
+        dialog.Calls.Should().ContainSingle()
+            .Which.Should().Be(("Success", "Rotate successful", "File pages rotated successfully"));
+    }
+
+    [AvaloniaFact]
+    public async Task CreateRotatedFile_ShowsErrorDialogOnFailure()
+    {
+        var (vm, dialog, pdfService) = CreateViewModelWithStubs();
+        pdfService.ExceptionToThrow = new InvalidOperationException("rotation failed");
+        vm.FileToRotate = new PdfFile("test.pdf", 5);
+        vm.FileParts.Add(new PdfFileRotation(5));
+
+        await vm.CreateRotatedFile("output.pdf");
+
+        dialog.Calls.Should().ContainSingle()
+            .Which.Should().Be(("Error", "Error occurred", "rotation failed"));
+    }
+
+    #endregion
+
+    #region Dialog - Interleave
+
+    [AvaloniaFact]
+    public async Task CreateInterleavedFile_ShowsSuccessDialog()
+    {
+        var (vm, dialog, _) = CreateViewModelWithStubs();
+        vm.InterleaveFiles.Add(new PdfFile("a.pdf", 5));
+        vm.InterleaveFiles.Add(new PdfFile("b.pdf", 3));
+
+        await vm.CreateInterleavedFile("output.pdf");
+
+        dialog.Calls.Should().ContainSingle()
+            .Which.Should().Be(("Success", "Interleave successful", "Files interleaved successfully"));
+    }
+
+    [AvaloniaFact]
+    public async Task CreateInterleavedFile_ShowsErrorDialogOnFailure()
+    {
+        var (vm, dialog, pdfService) = CreateViewModelWithStubs();
+        pdfService.ExceptionToThrow = new InvalidOperationException("interleave failed");
+        vm.InterleaveFiles.Add(new PdfFile("a.pdf", 5));
+        vm.InterleaveFiles.Add(new PdfFile("b.pdf", 3));
+
+        await vm.CreateInterleavedFile("output.pdf");
+
+        dialog.Calls.Should().ContainSingle()
+            .Which.Should().Be(("Error", "Error occurred", "interleave failed"));
+    }
+
+    #endregion
+
+    #region Dialog - SetFile errors
+
+    [AvaloniaFact]
+    public async Task SetSplitFile_ShowsErrorForInvalidFile()
+    {
+        var (vm, dialog, pdfService) = CreateViewModelWithStubs();
+        pdfService.ExceptionToThrow = new InvalidOperationException("bad pdf");
+
+        await vm.SetSplitFile("bad.pdf");
+
+        vm.FileToSplit.Should().BeNull();
+        dialog.Calls.Should().ContainSingle()
+            .Which.Type.Should().Be("Error");
+    }
+
+    [AvaloniaFact]
+    public async Task SetSplitFile_SetsFileOnSuccess()
+    {
+        var (vm, dialog, _) = CreateViewModelWithStubs();
+
+        await vm.SetSplitFile("good.pdf");
+
+        vm.FileToSplit.Should().NotBeNull();
+        vm.FileToSplit!.FilePath.Should().Be("good.pdf");
+        vm.FileToSplit.PageCount.Should().Be(5);
+        dialog.Calls.Should().BeEmpty();
+    }
+
+    [AvaloniaFact]
+    public async Task SetRotateFile_ShowsErrorForInvalidFile()
+    {
+        var (vm, dialog, pdfService) = CreateViewModelWithStubs();
+        pdfService.ExceptionToThrow = new InvalidOperationException("bad pdf");
+
+        await vm.SetRotateFile("bad.pdf");
+
+        vm.FileToRotate.Should().BeNull();
+        dialog.Calls.Should().ContainSingle()
+            .Which.Type.Should().Be("Error");
+    }
+
+    [AvaloniaFact]
+    public async Task SetRotateFile_SetsFileOnSuccess()
+    {
+        var (vm, dialog, _) = CreateViewModelWithStubs();
+
+        await vm.SetRotateFile("good.pdf");
+
+        vm.FileToRotate.Should().NotBeNull();
+        vm.FileToRotate!.FilePath.Should().Be("good.pdf");
+        dialog.Calls.Should().BeEmpty();
+    }
+
+    [AvaloniaFact]
+    public async Task SetReorderFile_ShowsErrorForInvalidFile()
+    {
+        var (vm, dialog, pdfService) = CreateViewModelWithStubs();
+        pdfService.ExceptionToThrow = new InvalidOperationException("bad pdf");
+
+        await vm.SetReorderFile("bad.pdf");
+
+        vm.FileToReorder.Should().BeNull();
+        dialog.Calls.Should().ContainSingle()
+            .Which.Type.Should().Be("Error");
+    }
+
+    [AvaloniaFact]
+    public async Task SetReorderFile_SetsFileOnSuccess()
+    {
+        var (vm, dialog, _) = CreateViewModelWithStubs();
+
+        await vm.SetReorderFile("good.pdf");
+
+        vm.FileToReorder.Should().NotBeNull();
+        vm.FileToReorder!.FilePath.Should().Be("good.pdf");
+        dialog.Calls.Should().BeEmpty();
     }
 
     #endregion

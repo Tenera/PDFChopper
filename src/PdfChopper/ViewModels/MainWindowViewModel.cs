@@ -30,13 +30,14 @@ public partial class MainWindowViewModel : ObservableObject
 
     public ISukiToastManager ToastManager { get; }
 
-    public MainWindowViewModel() : this(new SukiToastManager(), new PdfService()) { }
+    public MainWindowViewModel()
+        : this(new SukiToastManager(), new PdfService(), null!) { }
 
-    public MainWindowViewModel(ISukiToastManager toastManager, IPdfService pdfService)
+    public MainWindowViewModel(ISukiToastManager toastManager, IPdfService pdfService, IDialogService dialogService)
     {
         ToastManager = toastManager;
         _pdfService = pdfService;
-        _dialogService = new DialogService(toastManager);
+        _dialogService = dialogService ?? new DialogService(toastManager);
         IsDarkTheme = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
 
         FilesToMerge.CollectionChanged += (_, _) =>
@@ -111,7 +112,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    private async Task AddFiles(string[] files)
+    internal async Task AddFiles(string[] files)
     {
         if (files.Length == 0) return;
 
@@ -156,7 +157,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    private async Task CreateMergedFile(string fileName)
+    internal async Task CreateMergedFile(string fileName)
     {
         try
         {
@@ -263,7 +264,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    private async Task SetSplitFile(string filepath)
+    internal async Task SetSplitFile(string filepath)
     {
         try
         {
@@ -374,7 +375,7 @@ public partial class MainWindowViewModel : ObservableObject
         await CreateInterleavedFile(filePath);
     }
 
-    private async Task CreateInterleavedFile(string filePath)
+    internal async Task CreateInterleavedFile(string filePath)
     {
         try
         {
@@ -473,7 +474,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    private async Task SetReorderFile(string filepath)
+    internal async Task SetReorderFile(string filepath)
     {
         try
         {
@@ -560,7 +561,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    private async Task SetRotateFile(string filepath)
+    internal async Task SetRotateFile(string filepath)
     {
         try
         {
@@ -595,7 +596,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    private async Task CreateRotatedFile(string fileName)
+    internal async Task CreateRotatedFile(string fileName)
     {
         try
         {

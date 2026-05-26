@@ -6,9 +6,9 @@ using MsBox.Avalonia.Enums;
 
 namespace PdfChopper.Services;
 
-public static class DialogService
+public class DialogService : IDialogService
 {
-    public static async Task ShowMessage(string title, string message)
+    public async Task ShowMessage(string title, string message)
     {
         var msg = MessageBoxManager.GetMessageBoxStandard(new MessageBoxStandardParams
         {

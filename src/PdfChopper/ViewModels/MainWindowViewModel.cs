@@ -11,7 +11,6 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using PdfChopper.Services;
 
-
 namespace PdfChopper.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
@@ -23,10 +22,17 @@ public partial class MainWindowViewModel : ObservableObject
             ? desktop.MainWindow?.StorageProvider
             : null;
 
-    public MainWindowViewModel()
+    private readonly IPdfService _pdfService;
+    private readonly IDialogService _dialogService;
+
+    public MainWindowViewModel() : this(new PdfService(), new DialogService()) { }
+
+    public MainWindowViewModel(IPdfService pdfService, IDialogService dialogService)
     {
-        // Subscribe to collection changes to update command CanExecute state
-        FilesToMerge.CollectionChanged += (_, __) =>
+        _pdfService = pdfService;
+        _dialogService = dialogService;
+
+        FilesToMerge.CollectionChanged += (_, _) =>
         {
             MergeCommand.NotifyCanExecuteChanged();
             UpCommand.NotifyCanExecuteChanged();
@@ -35,21 +41,21 @@ public partial class MainWindowViewModel : ObservableObject
             ClearCommand.NotifyCanExecuteChanged();
         };
 
-        FileExtracts.CollectionChanged += (_, __) =>
+        FileExtracts.CollectionChanged += (_, _) =>
         {
             SplitCommand.NotifyCanExecuteChanged();
             ClearExtractsCommand.NotifyCanExecuteChanged();
             DeleteExtractCommand.NotifyCanExecuteChanged();
         };
 
-        InterleaveFiles.CollectionChanged += (_, __) =>
+        InterleaveFiles.CollectionChanged += (_, _) =>
         {
             InterleaveCommand.NotifyCanExecuteChanged();
             ClearInterleaveFilesCommand.NotifyCanExecuteChanged();
             DeleteInterleaveFileCommand.NotifyCanExecuteChanged();
         };
 
-        FileParts.CollectionChanged += (_, __) =>
+        FileParts.CollectionChanged += (_, _) =>
         {
             RotateCommand.NotifyCanExecuteChanged();
             ClearPartsCommand.NotifyCanExecuteChanged();
@@ -100,11 +106,12 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 try
                 {
-                    FilesToMerge.Add(await PdfFile.CreateAsync(file));
+                    var pageCount = await Task.Run(() => _pdfService.GetPageCount(file));
+                    FilesToMerge.Add(new PdfFile(file, pageCount));
                 }
                 catch (Exception ex)
                 {
-                    await DialogService.ShowMessage("Could not open file",
+                    await _dialogService.ShowMessage("Could not open file",
                         $"Skipping '{fileInfo.Name}': {ex.Message}");
                 }
             }
@@ -136,12 +143,12 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
-            await PdfService.MergeAsync(FilesToMerge, fileName);
-            await DialogService.ShowMessage("Merge successful", "Files merged successfully");
+            await Task.Run(() => _pdfService.Merge(FilesToMerge, fileName));
+            await _dialogService.ShowMessage("Merge successful", "Files merged successfully");
         }
         catch (Exception ex)
         {
-            await DialogService.ShowMessage("Error occurred", ex.Message);
+            await _dialogService.ShowMessage("Error occurred", ex.Message);
         }
     }
 
@@ -243,12 +250,13 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
-            FileToSplit = await PdfFile.CreateAsync(filepath);
+            var pageCount = await Task.Run(() => _pdfService.GetPageCount(filepath));
+            FileToSplit = new PdfFile(filepath, pageCount);
             ClearExtracts();
         }
         catch (Exception ex)
         {
-            await DialogService.ShowMessage("Invalid file", $"Could not open the selected file: {ex.Message}");
+            await _dialogService.ShowMessage("Invalid file", $"Could not open the selected file: {ex.Message}");
         }
     }
 
@@ -259,12 +267,12 @@ public partial class MainWindowViewModel : ObservableObject
         {
             if (FileToSplit is null || !FileExtracts.Any()) return;
 
-            await PdfService.SplitAsync(FileToSplit.FilePath, FileExtracts);
-            await DialogService.ShowMessage("Split successful", "File split successfully");
+            await Task.Run(() => _pdfService.Split(FileToSplit.FilePath, FileExtracts));
+            await _dialogService.ShowMessage("Split successful", "File split successfully");
         }
         catch (Exception ex)
         {
-            await DialogService.ShowMessage("Error occurred", ex.Message);
+            await _dialogService.ShowMessage("Error occurred", ex.Message);
         }
     }
 
@@ -289,11 +297,11 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (FileExtracts.Any(x => x.FilePath.Equals(result, StringComparison.OrdinalIgnoreCase)))
         {
-            await DialogService.ShowMessage("Duplicate extract", "A file with the same path is already in the list of extracts.");
+            await _dialogService.ShowMessage("Duplicate extract", "A file with the same path is already in the list of extracts.");
             return;
         }
 
-        FileExtracts.Add(new PdfFileExtract(FileToSplit!, result));
+        FileExtracts.Add(new PdfFileExtract(FileToSplit!.PageCount, result));
     }
 
     public bool CanAddExtract => FileToSplit is not null;
@@ -355,12 +363,12 @@ public partial class MainWindowViewModel : ObservableObject
         {
             if (InterleaveFiles.Count <= 1) return;
 
-            await PdfService.InterleaveAsync(InterleaveFiles, filePath);
-            await DialogService.ShowMessage("Interleave successful", "Files interleaved successfully");
+            await Task.Run(() => _pdfService.Interleave(InterleaveFiles, filePath));
+            await _dialogService.ShowMessage("Interleave successful", "Files interleaved successfully");
         }
         catch (Exception ex)
         {
-            await DialogService.ShowMessage("Error occurred", ex.Message);
+            await _dialogService.ShowMessage("Error occurred", ex.Message);
         }
     }
 
@@ -386,11 +394,12 @@ public partial class MainWindowViewModel : ObservableObject
                 if (filePath is null) continue;
                 try
                 {
-                    InterleaveFiles.Add(await PdfFile.CreateAsync(filePath));
+                    var pageCount = await Task.Run(() => _pdfService.GetPageCount(filePath));
+                    InterleaveFiles.Add(new PdfFile(filePath, pageCount));
                 }
                 catch (Exception ex)
                 {
-                    await DialogService.ShowMessage("Could not open file",
+                    await _dialogService.ShowMessage("Could not open file",
                         $"Skipping '{Path.GetFileName(filePath)}': {ex.Message}");
                 }
             }
@@ -451,30 +460,41 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
-            FileToReorder = await PdfFile.CreateAsync(filepath);
+            var pageCount = await Task.Run(() => _pdfService.GetPageCount(filepath));
+            FileToReorder = new PdfFile(filepath, pageCount);
         }
         catch (Exception ex)
         {
-            await DialogService.ShowMessage("Invalid file", $"Could not open the selected file: {ex.Message}");
+            await _dialogService.ShowMessage("Invalid file", $"Could not open the selected file: {ex.Message}");
         }
     }
 
     [RelayCommand(CanExecute = nameof(CanReorder))]
     public async Task Reorder()
     {
+        if (StorageProvider is not { CanSave: true } provider) return;
+        if (FileToReorder is null) return;
+
+        var file = await provider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save reordered file to",
+            DefaultExtension = "pdf",
+            FileTypeChoices = [PdfFileType],
+            ShowOverwritePrompt = true,
+            SuggestedFileName = Path.GetFileNameWithoutExtension(FileToReorder.FilePath) + "_reordered.pdf"
+        });
+
+        var filePath = file?.TryGetLocalPath();
+        if (filePath is null) return;
+
         try
         {
-            if (FileToReorder is null) return;
-            var dir = Path.GetDirectoryName(FileToReorder.FilePath)!;
-            var name = Path.GetFileNameWithoutExtension(FileToReorder.FilePath);
-            var outputPath = Path.Combine(dir, $"{name}_2.pdf");
-
-            await PdfService.ReorderAsync(FileToReorder.FilePath, outputPath);
-            await DialogService.ShowMessage("Reorder successful", $"File reordered successfully to {outputPath}");
+            await Task.Run(() => _pdfService.Reorder(FileToReorder.FilePath, filePath));
+            await _dialogService.ShowMessage("Reorder successful", "File reordered successfully");
         }
         catch (Exception ex)
         {
-            await DialogService.ShowMessage("Error occurred", ex.Message);
+            await _dialogService.ShowMessage("Error occurred", ex.Message);
         }
     }
 
@@ -527,12 +547,13 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
-            FileToRotate = await PdfFile.CreateAsync(filepath);
+            var pageCount = await Task.Run(() => _pdfService.GetPageCount(filepath));
+            FileToRotate = new PdfFile(filepath, pageCount);
             ClearParts();
         }
         catch (Exception ex)
         {
-            await DialogService.ShowMessage("Invalid file", $"Could not open the selected file: {ex.Message}");
+            await _dialogService.ShowMessage("Invalid file", $"Could not open the selected file: {ex.Message}");
         }
     }
 
@@ -563,12 +584,12 @@ public partial class MainWindowViewModel : ObservableObject
         {
             if (FileToRotate is null || !FileParts.Any()) return;
 
-            await PdfService.RotateAsync(FileToRotate.FilePath, FileParts, fileName);
-            await DialogService.ShowMessage("Rotate successful", "File pages rotated successfully");
+            await Task.Run(() => _pdfService.Rotate(FileToRotate.FilePath, FileParts, fileName));
+            await _dialogService.ShowMessage("Rotate successful", "File pages rotated successfully");
         }
         catch (Exception ex)
         {
-            await DialogService.ShowMessage("Error occurred", ex.Message);
+            await _dialogService.ShowMessage("Error occurred", ex.Message);
         }
     }
 
@@ -577,7 +598,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanAddPart))]
     public void AddPart()
     {
-        FileParts.Add(new PdfFileRotation(FileToRotate!));
+        FileParts.Add(new PdfFileRotation(FileToRotate!.PageCount));
     }
 
     public bool CanAddPart => FileToRotate is not null;

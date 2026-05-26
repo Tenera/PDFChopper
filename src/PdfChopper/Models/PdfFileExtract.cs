@@ -1,20 +1,12 @@
-using CommunityToolkit.Mvvm.ComponentModel;
-
 namespace PdfChopper.Models;
 
-public class PdfFileExtract : ObservableObject
+public class PdfFileExtract : PageRangeModel
 {
-    private readonly PdfFile _parent;
-    private int _startPage;
-    private int _endPage;
     private string _filePath;
 
-    public PdfFileExtract(PdfFile parent, string filePath)
+    public PdfFileExtract(int pageCount, string filePath) : base(pageCount)
     {
-        _parent = parent;
         _filePath = filePath;
-        _startPage = 1;
-        _endPage = _parent.PageCount;
     }
 
     public string FilePath
@@ -24,32 +16,6 @@ public class PdfFileExtract : ObservableObject
         {
             if (value == _filePath) return;
             _filePath = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public int StartPage
-    {
-        get => _startPage;
-        set
-        {
-            if (_startPage == value) return;
-            if (value > _parent.PageCount || value <= 0 || value > _endPage) return;
-
-            _startPage = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public int EndPage
-    {
-        get => _endPage;
-        set
-        {
-            if (_endPage == value) return;
-            if (value > _parent.PageCount || value <= 0 || value < _startPage) return;
-
-            _endPage = value;
             OnPropertyChanged();
         }
     }

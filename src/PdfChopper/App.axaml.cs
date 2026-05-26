@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using PdfChopper.Services;
 using PdfChopper.ViewModels;
 using PdfChopper.Views;
 
@@ -19,7 +20,7 @@ public partial class App : Application
         {
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel(),
+                DataContext = new MainWindowViewModel(new PdfService(), new DialogService()),
             };
         }
 

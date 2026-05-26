@@ -9,6 +9,7 @@ namespace PdfChopper.Tests.Services;
 public class PdfServiceGetPageCountTests : IDisposable
 {
     private readonly string _tempDir = TestHelper.CreateTempDir();
+    private readonly PdfService _sut = new();
 
     public void Dispose()
     {
@@ -21,13 +22,13 @@ public class PdfServiceGetPageCountTests : IDisposable
     {
         var path = TestHelper.CreateTestPdf(_tempDir, 7);
 
-        PdfService.GetPageCount(path).Should().Be(7);
+        _sut.GetPageCount(path).Should().Be(7);
     }
 
     [Fact]
     public void GetPageCount_InvalidPath_Throws()
     {
-        var act = () => PdfService.GetPageCount(Path.Combine(_tempDir, "nonexistent.pdf"));
+        var act = () => _sut.GetPageCount(Path.Combine(_tempDir, "nonexistent.pdf"));
 
         act.Should().Throw<Exception>();
     }

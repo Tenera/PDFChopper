@@ -465,10 +465,12 @@ public partial class MainWindowViewModel : ObservableObject
         try
         {
             if (FileToReorder is null) return;
-            var outputPath = FileToReorder.FilePath.Replace(".pdf", "_2.pdf", StringComparison.InvariantCultureIgnoreCase);
+            var dir = Path.GetDirectoryName(FileToReorder.FilePath)!;
+            var name = Path.GetFileNameWithoutExtension(FileToReorder.FilePath);
+            var outputPath = Path.Combine(dir, $"{name}_2.pdf");
 
             await PdfService.ReorderAsync(FileToReorder.FilePath, outputPath);
-            await DialogService.ShowMessage("Reordered successful", $"File reordered successfully to {outputPath}");
+            await DialogService.ShowMessage("Reorder successful", $"File reordered successfully to {outputPath}");
         }
         catch (Exception ex)
         {

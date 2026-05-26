@@ -1,25 +1,48 @@
-using System.Threading.Tasks;
-using Avalonia.Controls;
-using MsBox.Avalonia;
-using MsBox.Avalonia.Dto;
-using MsBox.Avalonia.Enums;
+using System;
+using Avalonia.Controls.Notifications;
+using SukiUI.Toasts;
 
 namespace PdfChopper.Services;
 
 public class DialogService : IDialogService
 {
-    public async Task ShowMessage(string title, string message)
-    {
-        var msg = MessageBoxManager.GetMessageBoxStandard(new MessageBoxStandardParams
-        {
-            ButtonDefinitions = ButtonEnum.Ok,
-            CanResize = false,
-            ContentTitle = title,
-            ContentMessage = message,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Icon = Icon.None
-        });
+    private readonly ISukiToastManager _toastManager;
 
-        await msg.ShowAsync();
+    public DialogService(ISukiToastManager toastManager)
+    {
+        _toastManager = toastManager;
+    }
+
+    public void ShowSuccess(string title, string message)
+    {
+        _toastManager.CreateToast()
+            .WithTitle(title)
+            .WithContent(message)
+            .OfType(NotificationType.Success)
+            .Dismiss().After(TimeSpan.FromSeconds(3))
+            .Dismiss().ByClicking()
+            .Queue();
+    }
+
+    public void ShowError(string title, string message)
+    {
+        _toastManager.CreateToast()
+            .WithTitle(title)
+            .WithContent(message)
+            .OfType(NotificationType.Error)
+            .Dismiss().After(TimeSpan.FromSeconds(5))
+            .Dismiss().ByClicking()
+            .Queue();
+    }
+
+    public void ShowWarning(string title, string message)
+    {
+        _toastManager.CreateToast()
+            .WithTitle(title)
+            .WithContent(message)
+            .OfType(NotificationType.Warning)
+            .Dismiss().After(TimeSpan.FromSeconds(4))
+            .Dismiss().ByClicking()
+            .Queue();
     }
 }

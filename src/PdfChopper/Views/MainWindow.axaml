@@ -1,16 +1,37 @@
-<Window xmlns="https://github.com/avaloniaui"
+<suki:SukiWindow xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:PdfChopper.ViewModels"
+        xmlns:suki="https://github.com/kikipoulet/SukiUI"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
         x:Class="PdfChopper.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/PDFChopper.ico"
-        Title="PDF Chopper">
+        Title="PDF Chopper"
+        BackgroundStyle="GradientSoft">
 
-    <Window.Styles>
-        <Style Selector="Button" >
+    <suki:SukiWindow.LogoContent>
+        <Image Source="/Assets/PDFChopper.ico" Width="22" Height="22" />
+    </suki:SukiWindow.LogoContent>
+
+    <suki:SukiWindow.Hosts>
+        <suki:SukiToastHost Manager="{Binding ToastManager}" />
+    </suki:SukiWindow.Hosts>
+
+    <suki:SukiWindow.RightWindowTitleBarControls>
+        <Button Command="{Binding ToggleThemeCommand}" Padding="8,4" ToolTip.Tip="Toggle theme">
+            <Panel>
+                <PathIcon Data="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"
+                          IsVisible="{Binding !IsDarkTheme}" Width="16" Height="16" />
+                <PathIcon Data="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79zM4 10.5H1v2h3zm9-9.95h-2V3.5h2zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79zM20 10.5v2h3v-2zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41z"
+                          IsVisible="{Binding IsDarkTheme}" Width="16" Height="16" />
+            </Panel>
+        </Button>
+    </suki:SukiWindow.RightWindowTitleBarControls>
+
+    <suki:SukiWindow.Styles>
+        <Style Selector="Button.action">
             <Setter Property="Margin" Value="4" />
             <Setter Property="Width" Value="140" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -21,7 +42,16 @@
             <Setter Property="BorderBrush" Value="DarkGray" />
             <Setter Property="CanUserResizeColumns" Value="True" />
         </Style>
-    </Window.Styles>
+        <Style Selector="DataGridCell">
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+        <Style Selector="Label">
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+    </suki:SukiWindow.Styles>
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
@@ -32,7 +62,7 @@
         <TabItem Header="Merge">
             <Grid RowDefinitions="*,Auto" ColumnDefinitions="*,Auto" Margin="0 4 0 8">
                 <DataGrid Grid.Column="0" Grid.Row="0" AutoGenerateColumns="False"
-                          ItemsSource="{Binding FilesToMerge}" 
+                          ItemsSource="{Binding FilesToMerge}"
                           SelectedItem="{Binding SelectedPdfFile, Mode=TwoWay}"
                           SelectionMode="Single" >
                     <DataGrid.Columns>
@@ -43,22 +73,21 @@
                     </DataGrid.Columns>
                 </DataGrid>
                 <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" Margin="4">
-                    <Button Command="{Binding AddCommand}" Content="Add" Margin="4 0 4 4" />
-                    <Button  Command="{Binding DeleteCommand}" Content="Delete" />
-                    <Button  Command="{Binding ClearCommand}" Content="Delete all" />
-                    <Button Command="{Binding UpCommand}" Content="Up" />
-                    <Button  Command="{Binding DownCommand}" Content="Down" />
-                    
+                    <Button Classes="action" Command="{Binding AddCommand}" Content="Add" Margin="4 0 4 4" />
+                    <Button Classes="action" Command="{Binding DeleteCommand}" Content="Delete" />
+                    <Button Classes="action" Command="{Binding ClearCommand}" Content="Delete all" />
+                    <Button Classes="action" Command="{Binding UpCommand}" Content="Up" />
+                    <Button Classes="action" Command="{Binding DownCommand}" Content="Down" />
                 </StackPanel>
-                <Button Grid.Column="0" Grid.Row="1" Command="{Binding MergeCommand}" Content="Merge"
+                <Button Classes="action" Grid.Column="0" Grid.Row="1" Command="{Binding MergeCommand}" Content="Merge"
                         HorizontalAlignment="Left" />
             </Grid>
         </TabItem>
 
         <TabItem Header="Split">
             <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="*,Auto" Margin="0 4 0 8">
-                <Border BorderThickness="1" 
-                        BorderBrush="DarkGray" Margin="4" 
+                <Border BorderThickness="1"
+                        BorderBrush="DarkGray" Margin="4"
                         Grid.ColumnSpan="2">
                     <Grid RowDefinitions="Auto,*" Margin="4">
                         <TextBlock Text="File to split" FontWeight="Bold" Margin="4"/>
@@ -88,20 +117,20 @@
                     </DataGrid.Columns>
                 </DataGrid>
                 <StackPanel Grid.Row="2" Grid.Column="1">
-                    <Button Command="{Binding AddExtractCommand}" Content="Add"  Margin="4 0 4 4"/>
-                    <Button Command="{Binding DeleteExtractCommand}" Content="Delete" />
-                    <Button Command="{Binding ClearExtractsCommand}" Content="Delete all" />
+                    <Button Classes="action" Command="{Binding AddExtractCommand}" Content="Add"  Margin="4 0 4 4"/>
+                    <Button Classes="action" Command="{Binding DeleteExtractCommand}" Content="Delete" />
+                    <Button Classes="action" Command="{Binding ClearExtractsCommand}" Content="Delete all" />
                 </StackPanel>
 
-                <Button Command="{Binding SplitCommand}" Content="Split"
+                <Button Classes="action" Command="{Binding SplitCommand}" Content="Split"
                         Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left"/>
             </Grid>
         </TabItem>
 
         <TabItem Header="Rotate">
             <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="*,Auto" Margin="0 4 0 8">
-                <Border BorderThickness="1" 
-                        BorderBrush="DarkGray" Margin="4" 
+                <Border BorderThickness="1"
+                        BorderBrush="DarkGray" Margin="4"
                         Grid.ColumnSpan="2">
                     <Grid RowDefinitions="Auto,*" Margin="4">
                         <TextBlock Text="File to rotate pages in" FontWeight="Bold" Margin="4"/>
@@ -110,7 +139,7 @@
                             <Label Content="Path:" Margin="4"  VerticalAlignment="Center"/>
                             <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="4" Margin="4" IsReadOnly="True"
                                      Text="{Binding FileToRotate.FilePath, Mode=OneWay}" />
-                            <Button Command="{Binding SelectRotateFileCommand}" 
+                            <Button Command="{Binding SelectRotateFileCommand}"
                                     Content="..." Grid.Column="5" Margin="4 0" Width="40"/>
                             <Label Grid.Row="1" Content="Filename:" Margin="4"  VerticalAlignment="Center"/>
                             <TextBox Grid.Row="1" Grid.Column="1" Margin="4" IsReadOnly="True"
@@ -132,12 +161,12 @@
                     </DataGrid.Columns>
                 </DataGrid>
                 <StackPanel Grid.Row="2" Grid.Column="1">
-                    <Button Command="{Binding AddPartCommand}" Content="Add"  Margin="4 0 4 4"/>
-                    <Button Command="{Binding DeletePartCommand}" Content="Delete" />
-                    <Button Command="{Binding ClearPartsCommand}" Content="Delete all" />
+                    <Button Classes="action" Command="{Binding AddPartCommand}" Content="Add"  Margin="4 0 4 4"/>
+                    <Button Classes="action" Command="{Binding DeletePartCommand}" Content="Delete" />
+                    <Button Classes="action" Command="{Binding ClearPartsCommand}" Content="Delete all" />
                 </StackPanel>
 
-                <Button Command="{Binding RotateCommand}" Content="Rotate"
+                <Button Classes="action" Command="{Binding RotateCommand}" Content="Rotate"
                         Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left"/>
             </Grid>
         </TabItem>
@@ -146,10 +175,10 @@
             <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="*,Auto" Margin="0 4 0 8">
                 <StackPanel Grid.Row="0" Orientation="Vertical" Margin="4">
                     <Label>Interleave the pages of multiple PDF documents:</Label>
-                    <Label>● Pages of all documents will be merged into 1 document</Label>
-                    <Label>● First round: Take first page of all documents</Label>
-                    <Label>● Second round: Take second page of all documents (if it has one)</Label>
-                    <Label>● ...</Label>
+                    <Label>* Pages of all documents will be merged into 1 document</Label>
+                    <Label>* First round: Take first page of all documents</Label>
+                    <Label>* Second round: Take second page of all documents (if it has one)</Label>
+                    <Label>* ...</Label>
                 </StackPanel>
                 <Label Grid.Row="1" Content="Files to interleave:" Margin="4 0"></Label>
                 <DataGrid Margin="4" Grid.Row="2" AutoGenerateColumns="False"
@@ -163,12 +192,12 @@
                     </DataGrid.Columns>
                 </DataGrid>
                 <StackPanel Grid.Row="2" Grid.Column="1">
-                    <Button Command="{Binding AddInterleaveFileCommand}" Content="Add" Margin="4,0,4,4" VerticalAlignment="Top"/>
-                    <Button Command="{Binding DeleteInterleaveFileCommand}" Content="Delete" VerticalAlignment="Top"/>
-                    <Button Command="{Binding ClearInterleaveFilesCommand}" Content="Delete all" VerticalAlignment="Top"/>
+                    <Button Classes="action" Command="{Binding AddInterleaveFileCommand}" Content="Add" Margin="4,0,4,4" VerticalAlignment="Top"/>
+                    <Button Classes="action" Command="{Binding DeleteInterleaveFileCommand}" Content="Delete" VerticalAlignment="Top"/>
+                    <Button Classes="action" Command="{Binding ClearInterleaveFilesCommand}" Content="Delete all" VerticalAlignment="Top"/>
                 </StackPanel>
 
-                <Button Command="{Binding InterleaveCommand}" Content="Interleave" VerticalAlignment="Top"
+                <Button Classes="action" Command="{Binding InterleaveCommand}" Content="Interleave" VerticalAlignment="Top"
                         Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left" />
             </Grid>
         </TabItem>
@@ -177,13 +206,13 @@
             <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" Margin="0 4 0 8">
                 <StackPanel Grid.Row="0" Orientation="Vertical" Margin="4">
                     <Label>Reorder the pages of a recto-verso PDF document after scanning:</Label>
-                    <Label>● First part: Scan document with auto feeder => Odd pages (1, 3, 5, ...)</Label>
-                    <Label>● Second part: Scan document as it comes out after the first scan => even pages in reverse order (10, 8, 6, ...)</Label>
+                    <Label>* First part: Scan document with auto feeder => Odd pages (1, 3, 5, ...)</Label>
+                    <Label>* Second part: Scan document as it comes out after the first scan => even pages in reverse order (10, 8, 6, ...)</Label>
                     <Label>Clicking the Reorder button will reorder the pages correctly if you followed the previous steps.</Label>
                 </StackPanel>
 
-                <Border Grid.Row="1" BorderThickness="1" 
-                        BorderBrush="DarkGray" Margin="4" 
+                <Border Grid.Row="1" BorderThickness="1"
+                        BorderBrush="DarkGray" Margin="4"
                         Grid.ColumnSpan="2">
                     <Grid RowDefinitions="Auto,*" Margin="4">
                         <TextBlock Text="File to reorder" FontWeight="Bold" Margin="4"/>
@@ -192,7 +221,7 @@
                             <Label Content="Path:" Margin="4"  VerticalAlignment="Center"/>
                             <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="4" Margin="4" IsReadOnly="True"
                                      Text="{Binding FileToReorder.FilePath, Mode=OneWay}" />
-                            <Button Command="{Binding SelectReorderFileCommand}" Content="..." 
+                            <Button Command="{Binding SelectReorderFileCommand}" Content="..."
                                     Grid.Column="5" Margin="4 0" Width="40"/>
                             <Label Grid.Row="1" Content="Filename:" Margin="4"  VerticalAlignment="Center"/>
                             <TextBox Grid.Row="1" Grid.Column="1" Margin="4" IsReadOnly="True"
@@ -204,7 +233,7 @@
                     </Grid>
                 </Border>
 
-                <Button Command="{Binding ReorderCommand}" Content="Reorder" VerticalAlignment="Top"
+                <Button Classes="action" Command="{Binding ReorderCommand}" Content="Reorder" VerticalAlignment="Top"
                         Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" />
             </Grid>
         </TabItem>
@@ -214,11 +243,11 @@
                 <Image Source="/Assets/Logo.png" Width="225" Height="101" Margin="0 40 0 20"/>
                 <StackPanel Grid.Row="1" HorizontalAlignment="Center">
                     <Label>Developed by Tenera IT using:</Label>
-                    <Label>● Avalonia</Label>
-                    <Label>● PdfSharp</Label>
+                    <Label>* Avalonia + SukiUI</Label>
+                    <Label>* PdfSharp</Label>
                     <Label Margin="0 10">Released "as is" and free to use.</Label>
                 </StackPanel>
             </Grid>
         </TabItem>
     </TabControl>
-</Window>
+</suki:SukiWindow>

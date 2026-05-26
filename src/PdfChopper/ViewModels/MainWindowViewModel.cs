@@ -10,6 +10,9 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using PdfChopper.Services;
+using Avalonia.Styling;
+using SukiUI;
+using SukiUI.Toasts;
 
 namespace PdfChopper.ViewModels;
 
@@ -25,12 +28,16 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly IPdfService _pdfService;
     private readonly IDialogService _dialogService;
 
-    public MainWindowViewModel() : this(new PdfService(), new DialogService()) { }
+    public ISukiToastManager ToastManager { get; }
 
-    public MainWindowViewModel(IPdfService pdfService, IDialogService dialogService)
+    public MainWindowViewModel() : this(new SukiToastManager(), new PdfService()) { }
+
+    public MainWindowViewModel(ISukiToastManager toastManager, IPdfService pdfService)
     {
+        ToastManager = toastManager;
         _pdfService = pdfService;
-        _dialogService = dialogService;
+        _dialogService = new DialogService(toastManager);
+        IsDarkTheme = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
 
         FilesToMerge.CollectionChanged += (_, _) =>
         {
@@ -61,6 +68,16 @@ public partial class MainWindowViewModel : ObservableObject
             ClearPartsCommand.NotifyCanExecuteChanged();
             DeletePartCommand.NotifyCanExecuteChanged();
         };
+    }
+
+    [ObservableProperty]
+    private bool _isDarkTheme;
+
+    [RelayCommand]
+    public void ToggleTheme()
+    {
+        SukiTheme.GetInstance().SwitchBaseTheme();
+        IsDarkTheme = !IsDarkTheme;
     }
 
     #region Merge
@@ -111,7 +128,7 @@ public partial class MainWindowViewModel : ObservableObject
                 }
                 catch (Exception ex)
                 {
-                    await _dialogService.ShowMessage("Could not open file",
+                    _dialogService.ShowError("Could not open file",
                         $"Skipping '{fileInfo.Name}': {ex.Message}");
                 }
             }
@@ -144,11 +161,11 @@ public partial class MainWindowViewModel : ObservableObject
         try
         {
             await Task.Run(() => _pdfService.Merge(FilesToMerge, fileName));
-            await _dialogService.ShowMessage("Merge successful", "Files merged successfully");
+            _dialogService.ShowSuccess("Merge successful", "Files merged successfully");
         }
         catch (Exception ex)
         {
-            await _dialogService.ShowMessage("Error occurred", ex.Message);
+            _dialogService.ShowError("Error occurred", ex.Message);
         }
     }
 
@@ -256,7 +273,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            await _dialogService.ShowMessage("Invalid file", $"Could not open the selected file: {ex.Message}");
+            _dialogService.ShowError("Invalid file", $"Could not open the selected file: {ex.Message}");
         }
     }
 
@@ -268,11 +285,11 @@ public partial class MainWindowViewModel : ObservableObject
             if (FileToSplit is null || !FileExtracts.Any()) return;
 
             await Task.Run(() => _pdfService.Split(FileToSplit.FilePath, FileExtracts));
-            await _dialogService.ShowMessage("Split successful", "File split successfully");
+            _dialogService.ShowSuccess("Split successful", "File split successfully");
         }
         catch (Exception ex)
         {
-            await _dialogService.ShowMessage("Error occurred", ex.Message);
+            _dialogService.ShowError("Error occurred", ex.Message);
         }
     }
 
@@ -297,7 +314,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (FileExtracts.Any(x => x.FilePath.Equals(result, StringComparison.OrdinalIgnoreCase)))
         {
-            await _dialogService.ShowMessage("Duplicate extract", "A file with the same path is already in the list of extracts.");
+            _dialogService.ShowWarning("Duplicate extract", "A file with the same path is already in the list of extracts.");
             return;
         }
 
@@ -364,11 +381,11 @@ public partial class MainWindowViewModel : ObservableObject
             if (InterleaveFiles.Count <= 1) return;
 
             await Task.Run(() => _pdfService.Interleave(InterleaveFiles, filePath));
-            await _dialogService.ShowMessage("Interleave successful", "Files interleaved successfully");
+            _dialogService.ShowSuccess("Interleave successful", "Files interleaved successfully");
         }
         catch (Exception ex)
         {
-            await _dialogService.ShowMessage("Error occurred", ex.Message);
+            _dialogService.ShowError("Error occurred", ex.Message);
         }
     }
 
@@ -399,7 +416,7 @@ public partial class MainWindowViewModel : ObservableObject
                 }
                 catch (Exception ex)
                 {
-                    await _dialogService.ShowMessage("Could not open file",
+                    _dialogService.ShowError("Could not open file",
                         $"Skipping '{Path.GetFileName(filePath)}': {ex.Message}");
                 }
             }
@@ -465,7 +482,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            await _dialogService.ShowMessage("Invalid file", $"Could not open the selected file: {ex.Message}");
+            _dialogService.ShowError("Invalid file", $"Could not open the selected file: {ex.Message}");
         }
     }
 
@@ -490,11 +507,11 @@ public partial class MainWindowViewModel : ObservableObject
         try
         {
             await Task.Run(() => _pdfService.Reorder(FileToReorder.FilePath, filePath));
-            await _dialogService.ShowMessage("Reorder successful", "File reordered successfully");
+            _dialogService.ShowSuccess("Reorder successful", "File reordered successfully");
         }
         catch (Exception ex)
         {
-            await _dialogService.ShowMessage("Error occurred", ex.Message);
+            _dialogService.ShowError("Error occurred", ex.Message);
         }
     }
 
@@ -553,7 +570,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            await _dialogService.ShowMessage("Invalid file", $"Could not open the selected file: {ex.Message}");
+            _dialogService.ShowError("Invalid file", $"Could not open the selected file: {ex.Message}");
         }
     }
 
@@ -585,11 +602,11 @@ public partial class MainWindowViewModel : ObservableObject
             if (FileToRotate is null || !FileParts.Any()) return;
 
             await Task.Run(() => _pdfService.Rotate(FileToRotate.FilePath, FileParts, fileName));
-            await _dialogService.ShowMessage("Rotate successful", "File pages rotated successfully");
+            _dialogService.ShowSuccess("Rotate successful", "File pages rotated successfully");
         }
         catch (Exception ex)
         {
-            await _dialogService.ShowMessage("Error occurred", ex.Message);
+            _dialogService.ShowError("Error occurred", ex.Message);
         }
     }
 

@@ -4,6 +4,7 @@ using Avalonia.Markup.Xaml;
 using PdfChopper.Services;
 using PdfChopper.ViewModels;
 using PdfChopper.Views;
+using SukiUI.Toasts;
 
 namespace PdfChopper;
 
@@ -18,9 +19,10 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            var toastManager = new SukiToastManager();
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel(new PdfService(), new DialogService()),
+                DataContext = new MainWindowViewModel(toastManager, new PdfService()),
             };
         }
 

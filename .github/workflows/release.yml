@@ -54,6 +54,7 @@ jobs:
           /p:PublishSingleFile=true
           /p:PublishAot=false
           /p:IncludeNativeLibrariesForSelfExtract=true
+          /p:DebugType=none
           --output publish/${{ matrix.name }}
 
       - name: Set executable permission

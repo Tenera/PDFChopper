@@ -57,6 +57,9 @@ jobs:
           /p:DebugType=none
           --output publish/${{ matrix.name }}
 
+      - name: Remove PDB files
+        run: find publish/${{ matrix.name }} -name '*.pdb' -delete
+
       - name: Set executable permission
         if: ${{ !contains(matrix.rid, 'win') }}
         run: chmod +x publish/${{ matrix.name }}/PdfChopper

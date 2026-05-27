@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Run tests
+        run: dotnet test src/PdfChopper.Tests --configuration Release
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - rid: win-x64
+            name: PdfChopper-win-x64
+          - rid: linux-x64
+            name: PdfChopper-linux-x64
+          - rid: osx-x64
+            name: PdfChopper-osx-x64
+          - rid: osx-arm64
+            name: PdfChopper-osx-arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish
+        run: >
+          dotnet publish src/PdfChopper/PdfChopper.csproj
+          --configuration Release
+          --runtime ${{ matrix.rid }}
+          --self-contained
+          /p:PublishSingleFile=true
+          /p:PublishAot=false
+          /p:IncludeNativeLibrariesForSelfExtract=true
+          --output publish/${{ matrix.name }}
+
+      - name: Set executable permission
+        if: ${{ !contains(matrix.rid, 'win') }}
+        run: chmod +x publish/${{ matrix.name }}/PdfChopper
+
+      - name: Zip artifact
+        run: cd publish && zip -r ../${{ matrix.name }}.zip ${{ matrix.name }}
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.name }}.zip
+          generate_release_notes: true
